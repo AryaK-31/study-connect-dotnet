@@ -36,7 +36,6 @@ public static class UserPrincipalFactory
 /// <summary>
 /// Cookie events: on every request make sure the account in the cookie still exists
 /// (e.g. after "Delete my account"), otherwise sign the browser out.
-/// Demonstrates polymorphism by overriding a framework virtual method.
 /// </summary>
 public sealed class UserValidationCookieEvents : CookieAuthenticationEvents
 {

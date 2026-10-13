@@ -145,7 +145,6 @@
         _teams = await TeamService.GetTeamsForUserAsync(UserId);
         IReadOnlyList<TeamInvitation> pending = await TeamService.GetPendingInvitationsAsync(UserId);
 
-        // Split one list into two with LINQ predicates.
         _invitationsForMe = pending.Where(i => i.Kind == InvitationKind.Invite && i.UserId == UserId).ToList();
         _joinRequests = pending.Where(i => i.Kind == InvitationKind.JoinRequest).ToList();
     }

@@ -3,8 +3,7 @@ using StudyConnect.Core.Validation;
 namespace StudyConnect.Infrastructure.Services;
 
 /// <summary>
-/// Direct messages between connected students (port of the Socket.io "send_message" / "mark_read"
-/// handlers and the messages / conversations / deleteConversation GraphQL resolvers).
+/// Direct messages between connected students.
 /// </summary>
 public sealed class MessageService : IMessageService
 {

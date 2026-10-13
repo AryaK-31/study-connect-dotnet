@@ -1,9 +1,6 @@
 namespace StudyConnect.Infrastructure.Services;
 
-/// <summary>
-/// Connection requests between students (port of sendConnectionRequest / acceptConnection /
-/// declineConnection / myConnections / pendingRequests / sentRequests).
-/// </summary>
+/// <summary>Connection requests between students.</summary>
 public sealed class ConnectionService : IConnectionService
 {
     private readonly IDbContextFactory<StudyConnectDbContext> _dbFactory;
@@ -205,7 +202,7 @@ public sealed class ConnectionService : IConnectionService
             .Where(c => c.Status != ConnectionStatus.Declined && (c.RequesterId == userId || c.AddresseeId == userId))
             .ToListAsync(cancellationToken);
 
-        // LINQ + lambdas: one entry per other user (an accepted connection wins over a pending one).
+
         return connections
             .GroupBy(c => c.OtherUserId(userId))
             .ToDictionary(

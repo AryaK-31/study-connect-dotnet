@@ -87,7 +87,7 @@ public abstract class AppComponentBase : ComponentBase, IDisposable
         }
     }
 
-    /// <summary>Generic overload for operations that also return a value (method overloading).</summary>
+    /// <summary>Runs an operation that returns a value.</summary>
     protected async Task<T?> RunAsync<T>(Func<Task<Result<T>>> operation, string? successMessage = null)
         where T : class
     {

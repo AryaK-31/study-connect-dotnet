@@ -29,7 +29,6 @@ public class OperationResult
 
 /// <summary>
 /// Generic outcome of a business operation that produces a value of type <typeparamref name="T"/>.
-/// Demonstrates generics and inheritance (it extends <see cref="OperationResult"/>).
 /// </summary>
 /// <typeparam name="T">Type of the value produced on success.</typeparam>
 public sealed class Result<T> : OperationResult

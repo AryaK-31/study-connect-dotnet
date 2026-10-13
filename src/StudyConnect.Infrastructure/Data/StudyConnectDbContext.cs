@@ -5,7 +5,6 @@ namespace StudyConnect.Infrastructure.Data;
 
 /// <summary>
 /// Entity Framework Core database context (SQLite).
-/// Replaces the Mongoose models of the original Node.js backend with a relational schema.
 /// </summary>
 public class StudyConnectDbContext : DbContext
 {

@@ -338,7 +338,7 @@
         set => _filter.Role = Enum.TryParse(value, out TeamRole role) ? role : null;
     }
 
-    /// <summary>Client-side filtering (search text + minimum score) with LINQ - no database round trip.</summary>
+    /// <summary>Filters the displayed students by search text and minimum score.</summary>
     private List<CandidateMatch> VisibleCandidates =>
         (_result?.Candidates ?? Array.Empty<CandidateMatch>())
             .Where(c => c.Match.Score >= _minimumScore)
@@ -418,7 +418,7 @@
 
     private static string QualityLabel(double score) => QualityOf(score).ToString();
 
-    /// <summary>Creates a team from a suggestion and invites the suggested members in one click.</summary>
+    /// <summary>Creates a team from a suggestion and invites its members.</summary>
     private async Task FormTeamAsync(TeamSuggestion suggestion)
     {
         if (_result?.Subject is null)

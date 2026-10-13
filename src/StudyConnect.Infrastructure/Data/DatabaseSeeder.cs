@@ -13,9 +13,7 @@ using StudyConnect.Core.Security;
 namespace StudyConnect.Infrastructure.Data;
 
 /// <summary>
-/// Reads the demo data from JSON files (file I/O) and inserts it with Entity Framework.
-/// The original project shipped <c>database/users.json</c> and <c>sessions.json</c> for MongoDB;
-/// this seeder extends that idea with subjects, labs, enrolments, teams and messages.
+/// Reads demo data from JSON files and inserts it into the database.
 /// </summary>
 public sealed class DatabaseSeeder
 {

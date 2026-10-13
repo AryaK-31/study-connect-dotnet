@@ -3,8 +3,7 @@ using StudyConnect.Core.MachineLearning;
 namespace StudyConnect.Infrastructure.Services;
 
 /// <summary>
-/// Data analytics for the Insights screen: aggregated statistics computed with LINQ and
-/// study communities discovered with the K-Means machine-learning algorithm.
+/// Aggregated statistics and study communities for the Insights screen.
 /// </summary>
 public sealed class InsightsService : IInsightsService
 {
@@ -52,7 +51,6 @@ public sealed class InsightsService : IInsightsService
         DateTime now = DateTime.Now;
         int upcomingSessions = await db.StudySessions.CountAsync(s => s.StartsAt >= now, cancellationToken);
 
-        // An explicit C# anonymous method (delegate syntax) used as a LINQ predicate.
         Func<Enrollment, bool> isAvailable = delegate (Enrollment enrollment)
         {
             return enrollment.LookingForTeam && !usersInTeams.Contains(enrollment.UserId);
@@ -60,7 +58,6 @@ public sealed class InsightsService : IInsightsService
 
         int lookingForTeam = enrollments.Where(isAvailable).Select(e => e.UserId).Distinct().Count();
 
-        // ----- Charts (GroupBy / OrderBy / Select with lambda expressions) -----
         List<ChartDatum> topInterests = users
             .SelectMany(u => u.Interests)
             .GroupBy(i => i.Name)

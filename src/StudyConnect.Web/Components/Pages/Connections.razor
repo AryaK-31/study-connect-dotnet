@@ -99,7 +99,7 @@
     private string _search = "";
     private User? _personToRemove;
 
-    /// <summary>The list for the selected tab, filtered by the search box (LINQ + lambda).</summary>
+    /// <summary>Returns the people shown on the selected tab.</summary>
     private List<User> CurrentList =>
         (_tab switch
         {
