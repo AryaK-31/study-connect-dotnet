@@ -1,0 +1,23 @@
+<div class="empty-state">
+    <div class="empty-icon">@Icon</div>
+    <h3>@Title</h3>
+    @if (!string.IsNullOrEmpty(Message))
+    {
+        <p class="muted">@Message</p>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter]
+    public string Icon { get; set; } = "📭";
+
+    [Parameter]
+    public string Title { get; set; } = "Nothing here yet";
+
+    [Parameter]
+    public string? Message { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

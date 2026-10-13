@@ -1,0 +1,18 @@
+<Project>
+  <!--
+    Shared build settings applied to every project in the solution.
+    Keeping them in one place guarantees all projects target the same framework
+    (.NET 9 - required by the assignment for Visual Studio 2022).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <Authors>StudyConnect Team</Authors>
+    <Product>StudyConnect</Product>
+    <!-- Nullable-reference warnings are informational only; never fail the build on them. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NuGetAudit>false</NuGetAudit>
+  </PropertyGroup>
+</Project>

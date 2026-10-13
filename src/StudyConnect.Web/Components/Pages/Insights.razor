@@ -1,0 +1,156 @@
+@page "/insights"
+@inject IInsightsService InsightsService
+@inject ISubjectService SubjectService
+
+<PageTitle>Insights · StudyConnect</PageTitle>
+
+<div class="container">
+    <header class="page-header">
+        <div>
+            <h1>📊 Insights</h1>
+            <p class="muted">Live analytics about the StudyConnect community, plus study communities discovered by machine learning.</p>
+        </div>
+        <div class="field inline">
+            <label class="label" for="subject">Subject</label>
+            <select id="subject" class="select" @bind="_subjectId" @bind:after="LoadAsync">
+                <option value="0">All subjects</option>
+                @foreach (Subject subject in _subjects)
+                {
+                    <option value="@subject.Id">@subject.Code</option>
+                }
+            </select>
+        </div>
+    </header>
+
+    @if (_report is null)
+    {
+        <div class="page-loading"><span class="spinner"></span> Crunching the numbers…</div>
+    }
+    else
+    {
+        <section class="stat-grid">
+            <div class="stat">
+                <span class="stat-icon">🎓</span>
+                <span class="stat-value">@_report.TotalStudents</span>
+                <span class="stat-label">Students</span>
+            </div>
+            <div class="stat">
+                <span class="stat-icon">🔍</span>
+                <span class="stat-value">@_report.StudentsLookingForTeam</span>
+                <span class="stat-label">Looking for a team</span>
+            </div>
+            <div class="stat">
+                <span class="stat-icon">👥</span>
+                <span class="stat-value">@_report.TeamsFormed</span>
+                <span class="stat-label">Teams formed</span>
+            </div>
+            <div class="stat">
+                <span class="stat-icon">📅</span>
+                <span class="stat-value">@_report.UpcomingSessions</span>
+                <span class="stat-label">Upcoming sessions</span>
+            </div>
+            <div class="stat">
+                <span class="stat-icon">🟢</span>
+                <span class="stat-value">@Realtime.OnlineCount</span>
+                <span class="stat-label">Online right now</span>
+            </div>
+        </section>
+
+        if (_selected is not null)
+        {
+            <div class="alert alert-info">
+                <strong>@_selected.Label</strong>: @(_selected.Hint ?? _selected.Value.ToString(CultureInfo.InvariantCulture))
+                <button class="link-btn small" @onclick="() => _selected = null">dismiss</button>
+            </div>
+        }
+
+        <div class="chart-grid">
+            <section class="card">
+                <BarChart Title="Most popular interests" Data="_report.TopInterests" Variant="primary" OnSelect="SelectDatum" />
+            </section>
+            <section class="card">
+                <BarChart Title="Students still needing a team, per lab" Data="_report.LabDemand" Variant="warm" OnSelect="SelectDatum" />
+            </section>
+            <section class="card">
+                <BarChart Title="Preferred team roles" Data="_report.RoleDistribution" Variant="accent" OnSelect="SelectDatum" />
+            </section>
+            <section class="card">
+                <BarChart Title="Free time slots by day" Data="_report.AvailabilityByDay" Variant="primary" OnSelect="SelectDatum" />
+            </section>
+        </div>
+
+        <section class="card">
+            <div class="card-header">
+                <div>
+                    <h2>🧠 Study communities (K-Means clustering)</h2>
+                    <p class="muted small">Students are grouped by the similarity of their interests. Each community is labelled with its most characteristic topics.</p>
+                </div>
+            </div>
+
+            <details class="explainer">
+                <summary>How does this work?</summary>
+                <ol>
+                    <li><strong>Feature extraction:</strong> every student's interests become a TF-IDF vector, where rare interests weigh more than common ones.</li>
+                    <li><strong>Clustering:</strong> a from-scratch K-Means implementation (k-means++ initialisation) groups similar vectors. k is chosen with the rule of thumb k ≈ √(n/2).</li>
+                    <li><strong>Labelling:</strong> the highest-weighted terms of each cluster centroid name the community.</li>
+                </ol>
+            </details>
+
+            @if (_report.Communities.Count == 0)
+            {
+                <p class="muted">Not enough students with interests to form communities yet.</p>
+            }
+            else
+            {
+                <div class="community-grid">
+                    @foreach (CommunityView community in _report.Communities)
+                    {
+                        <article class="community-card">
+                            <h3>@community.Community.Label</h3>
+                            <span class="muted small">@community.MemberNames.Count students</span>
+                            <div class="avatar-stack mt">
+                                @foreach (string name in community.MemberNames.Take(8))
+                                {
+                                    <Avatar Name="@name" Size="sm" />
+                                }
+                                @if (community.MemberNames.Count > 8)
+                                {
+                                    <span class="small muted">+@(community.MemberNames.Count - 8)</span>
+                                }
+                            </div>
+                            <p class="small mt">@(string.Join(", ", community.MemberNames.Take(8)))</p>
+                        </article>
+                    }
+                </div>
+            }
+        </section>
+    }
+</div>
+
+@code {
+    private InsightsReport? _report;
+    private IReadOnlyList<Subject> _subjects = Array.Empty<Subject>();
+    private int _subjectId;
+    private ChartDatum? _selected;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(async () => _subjects = await SubjectService.GetSubjectsAsync());
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        await LoadSafelyAsync(async () =>
+        {
+            _report = await InsightsService.GetReportAsync(_subjectId == 0 ? null : _subjectId);
+        }, "Could not load insights.");
+    }
+
+    private void SelectDatum(ChartDatum datum) => _selected = datum;
+}

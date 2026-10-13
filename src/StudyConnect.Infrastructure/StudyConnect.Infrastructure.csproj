@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Infrastructure layer.
+    Entity Framework Core (SQLite) persistence, service implementations,
+    e-mail delivery and the in-memory real-time notification hub.
+  -->
+  <PropertyGroup>
+    <RootNamespace>StudyConnect.Infrastructure</RootNamespace>
+    <AssemblyName>StudyConnect.Infrastructure</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Gives access to logging, options and configuration abstractions used by the services. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StudyConnect.Core\StudyConnect.Core.csproj" />
+  </ItemGroup>
+
+</Project>

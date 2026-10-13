@@ -1,0 +1,111 @@
+@page "/account/signup"
+@inject IAuthService AuthService
+@inject IPasswordPolicy PasswordRules
+
+<PageTitle>Create account · StudyConnect</PageTitle>
+
+<div class="auth-card">
+    @if (_redirectUrl is not null)
+    {
+        <HeadContent>
+            <meta http-equiv="refresh" content="@($"0;url={_redirectUrl}")" />
+        </HeadContent>
+        <div class="auth-success">
+            <span class="spinner"></span>
+            <h1>Account created 🎉</h1>
+            <p class="muted">Let's set up your profile…</p>
+            <a class="btn btn-primary" href="@_redirectUrl">Continue</a>
+        </div>
+    }
+    else
+    {
+        <h1>Create your account</h1>
+        <p class="muted">Join StudyConnect and meet team mates from your lab in minutes.</p>
+
+        if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-error">@_error</div>
+        }
+
+        <EditForm Model="Input" method="post" OnValidSubmit="SignupAsync" FormName="signup" class="form">
+            <DataAnnotationsValidator />
+
+            <div class="field">
+                <label for="name" class="label">Full name</label>
+                <InputText id="name" class="input" autocomplete="name" placeholder="e.g. Alice Johnson" @bind-Value="Input.Name" />
+                <ValidationMessage For="() => Input.Name" />
+            </div>
+
+            <div class="field">
+                <label for="email" class="label">University email</label>
+                <InputText id="email" class="input" type="email" autocomplete="email" placeholder="you@student.uts.edu.au" @bind-Value="Input.Email" />
+                <ValidationMessage For="() => Input.Email" />
+            </div>
+
+            <div class="field">
+                <label for="phone" class="label">Contact number <span class="muted small">(optional)</span></label>
+                <InputText id="phone" class="input" type="tel" autocomplete="tel" placeholder="e.g. 0412 345 678" @bind-Value="Input.ContactNumber" />
+                <ValidationMessage For="() => Input.ContactNumber" />
+            </div>
+
+            <div class="form-row">
+                <div class="field">
+                    <label for="password" class="label">Password</label>
+                    <InputText id="password" class="input" type="password" autocomplete="new-password" data-password-meter="signup-meter" @bind-Value="Input.Password" />
+                    <ValidationMessage For="() => Input.Password" />
+                </div>
+                <div class="field">
+                    <label for="confirm" class="label">Confirm password</label>
+                    <InputText id="confirm" class="input" type="password" autocomplete="new-password" @bind-Value="Input.ConfirmPassword" />
+                    <ValidationMessage For="() => Input.ConfirmPassword" />
+                </div>
+            </div>
+
+            @* Live strength meter (updated by wwwroot/js/app.js while typing). *@
+            <div id="signup-meter" class="password-meter" aria-live="polite">
+                <div class="meter-track"><div class="meter-fill"></div></div>
+                <ul class="meter-rules">
+                    <li data-rule="length">At least @PasswordRules.Requirements.MinLength characters</li>
+                    <li data-rule="upper">An uppercase letter</li>
+                    <li data-rule="lower">A lowercase letter</li>
+                    <li data-rule="digit">A number</li>
+                    <li data-rule="special">A special character (!@@#$%…)</li>
+                </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-block">Create account</button>
+        </EditForm>
+
+        <p class="center small">Already have an account? <a href="account/login">Log in</a></p>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private SignupInput Input { get; set; } = new();
+
+    private string? _error;
+    private string? _redirectUrl;
+
+    private async Task SignupAsync()
+    {
+        var request = new RegistrationRequest(Input.Name, Input.Email, Input.Password, Input.ConfirmPassword, Input.ContactNumber);
+        Result<User> result = await AuthService.RegisterAsync(request);
+
+        if (!result.Succeeded || result.Value is null)
+        {
+            _error = result.Error;
+            return;
+        }
+
+        await HttpContext.SignInAsync(
+            CookieAuthenticationDefaults.AuthenticationScheme,
+            UserPrincipalFactory.Create(result.Value),
+            new AuthenticationProperties { IsPersistent = true });
+
+        _redirectUrl = "/profile?welcome=true";
+    }
+}

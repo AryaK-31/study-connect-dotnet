@@ -1,0 +1,485 @@
+@page "/teams/{TeamId:int}"
+@using System.Text
+@inject ITeamService TeamService
+@inject IMatchmakingService Matchmaking
+@inject ICompatibilityEngine Engine
+@inject IJSRuntime JS
+
+<PageTitle>@(_team?.Name ?? "Team") · StudyConnect</PageTitle>
+
+<div class="container">
+    @if (_loading)
+    {
+        <div class="page-loading"><span class="spinner"></span> Loading team…</div>
+    }
+    else if (_team is null)
+    {
+        <EmptyState Icon="🧭" Title="Team not found" Message="This team may have been deleted.">
+            <a class="btn btn-primary" href="teams">Back to my teams</a>
+        </EmptyState>
+    }
+    else if (!_team.HasMember(UserId))
+    {
+        <EmptyState Icon="🔒" Title="@_team.Name" Message="Only team members can see the team workspace.">
+            <a class="btn btn-primary" href="@($"team-finder?subject={_team.SubjectId}")">Back to Team Finder</a>
+        </EmptyState>
+    }
+    else
+    {
+        <header class="page-header">
+            <div>
+                <span class="eyebrow">@_team.Subject.Code · @_team.LabSlot.Display · Tutor: @_team.LabSlot.Tutor</span>
+                <h1>@_team.Name</h1>
+                @if (!string.IsNullOrWhiteSpace(_team.ProjectIdea))
+                {
+                    <p class="muted">💡 @_team.ProjectIdea</p>
+                }
+                <div class="row gap">
+                    <span class="@(_team.IsOpen ? "badge badge-success" : "badge")">@(_team.IsOpen ? "Open to new members" : "Closed")</span>
+                    <span class="badge">@_team.Members.Count / @_team.MaxMembers members</span>
+                </div>
+            </div>
+            <div class="row gap wrap">
+                <button class="btn btn-secondary btn-sm" @onclick="ExportRosterAsync">⬇ Export roster (CSV)</button>
+                @if (IsLeader)
+                {
+                    <button class="btn btn-secondary btn-sm" @onclick="OpenEditor">✏️ Edit team</button>
+                }
+                <button class="btn btn-ghost btn-sm" @onclick="() => _confirmLeave = true">Leave team</button>
+            </div>
+        </header>
+
+        <div class="layout-main-side">
+            <div class="stack">
+                <section class="card">
+                    <h2>Members</h2>
+                    <ul class="list">
+                        @foreach (TeamMember member in _team.Members.OrderBy(m => m.CreatedAtUtc))
+                        {
+                            <li class="list-item">
+                                <div class="row gap">
+                                    <Avatar Name="@member.User.Name" Online="Realtime.IsOnline(member.UserId)" />
+                                    <div>
+                                        <strong>@member.User.Name @(member.UserId == _team.LeaderId ? "👑" : "")</strong>
+                                        <span class="muted small block">@member.Role.ToDisplayName() · <a href="@($"mailto:{member.User.Email}")">@member.User.Email</a></span>
+                                        @if (!string.IsNullOrWhiteSpace(member.User.ContactNumber))
+                                        {
+                                            <span class="muted small block">📞 @member.User.ContactNumber</span>
+                                        }
+                                    </div>
+                                </div>
+                                @if (IsLeader && member.UserId != UserId)
+                                {
+                                    <button class="btn btn-ghost btn-sm" @onclick="() => _memberToRemove = member">Remove</button>
+                                }
+                            </li>
+                        }
+                    </ul>
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <h2>💬 Team chat</h2>
+                        <span class="muted small">Only visible to team members</span>
+                    </div>
+                    <div class="chat-messages team-chat" @ref="_chatElement">
+                        @if (_messages.Count == 0)
+                        {
+                            <p class="muted small center">No messages yet. Say hi to your team! 👋</p>
+                        }
+                        @foreach (TeamMessage message in _messages)
+                        {
+                            bool mine = message.SenderId == UserId;
+                            <div class="@(mine ? "bubble-row mine" : "bubble-row")">
+                                @if (!mine)
+                                {
+                                    <Avatar Name="@message.Sender.Name" Size="sm" />
+                                }
+                                <div class="bubble">
+                                    @if (!mine)
+                                    {
+                                        <span class="bubble-author">@message.Sender.FirstName</span>
+                                    }
+                                    <span class="bubble-text">@message.Text</span>
+                                    <span class="bubble-time">@message.CreatedAtUtc.ToChatTime()</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                    <form class="chat-input" @onsubmit="SendMessageAsync" @onsubmit:preventDefault="true">
+                        <input class="input" placeholder="Message your team…" maxlength="2000" @bind="_draft" @bind:event="oninput" />
+                        <button type="submit" class="btn btn-primary" disabled="@(string.IsNullOrWhiteSpace(_draft))">Send</button>
+                    </form>
+                </section>
+            </div>
+
+            <aside class="stack">
+                <section class="card">
+                    <h2>📊 Team health</h2>
+                    <div class="row gap">
+                        <ScoreRing Score="_teamScore" Quality="QualityOf(_teamScore)" Size="72" />
+                        <div>
+                            <strong>Average compatibility</strong>
+                            <p class="muted small">Mean score of every pair of members (interests, free time, roles).</p>
+                        </div>
+                    </div>
+                    <h3 class="mt">Roles covered</h3>
+                    <div class="chip-list">
+                        @foreach (TeamRole role in _team.Members.Select(m => m.Role).Distinct())
+                        {
+                            <span class="chip static">@role.ToDisplayName()</span>
+                        }
+                    </div>
+                    @if (_missingRoles.Count > 0)
+                    {
+                        <p class="small warn-text">Nobody has chosen: @(string.Join(", ", _missingRoles.Select(r => r.ToDisplayName())))</p>
+                    }
+                    <h3 class="mt">When everyone is free</h3>
+                    <AvailabilityGrid ReadOnly="true" Heat="_heat" HeatMax="_team.Members.Count" />
+                    <p class="small muted">Darker cells = more members free. Full cells mean the whole team is available.</p>
+                </section>
+
+                @if (!_team.IsFull)
+                {
+                    <section class="card">
+                        <h2>✉️ Invite a team mate</h2>
+                        @if (_candidates.Count == 0)
+                        {
+                            <p class="muted small">No available students left in @_team.LabSlot.Code. Ask friends to join StudyConnect!</p>
+                        }
+                        else
+                        {
+                            <div class="field">
+                                <label class="label" for="invitee">Available students in @_team.LabSlot.Code</label>
+                                <select id="invitee" class="select" @bind="_selectedCandidateId">
+                                    <option value="0">Choose a student</option>
+                                    @foreach (CandidateMatch candidate in _candidates)
+                                    {
+                                        <option value="@candidate.Profile.UserId">@candidate.Profile.Name · @candidate.Profile.PreferredRole.ToDisplayName() · @($"{candidate.Match.Score:0}% match")</option>
+                                    }
+                                </select>
+                            </div>
+                            <button class="btn btn-primary btn-sm" disabled="@(_selectedCandidateId == 0 || IsBusy)" @onclick="InviteSelectedAsync">Send invitation</button>
+                        }
+
+                        @if (_pendingInvites.Count > 0)
+                        {
+                            <h3 class="mt">Pending</h3>
+                            <ul class="list compact">
+                                @foreach (TeamInvitation invitation in _pendingInvites)
+                                {
+                                    <li class="list-item">
+                                        <span>@invitation.User.Name <span class="muted small">(@invitation.Kind.ToDisplayName())</span></span>
+                                        <button class="link-btn small" @onclick="() => CancelInvitationAsync(invitation)">Cancel</button>
+                                    </li>
+                                }
+                            </ul>
+                        }
+                    </section>
+                }
+            </aside>
+        </div>
+    }
+</div>
+
+<Modal IsOpen="_editing" Title="Edit team" OnClose="() => _editing = false">
+    <ChildContent>
+        <EditForm id="edit-team-form" Model="_form" OnValidSubmit="SaveTeamAsync" class="form">
+            <DataAnnotationsValidator />
+            <div class="field">
+                <label class="label" for="name">Team name</label>
+                <InputText id="name" class="input" @bind-Value="_form.Name" />
+                <ValidationMessage For="() => _form.Name" />
+            </div>
+            <div class="field">
+                <label class="label" for="idea">Project idea</label>
+                <InputTextArea id="idea" class="textarea" rows="4" @bind-Value="_form.ProjectIdea" />
+            </div>
+            <label class="switch">
+                <InputCheckbox @bind-Value="_form.IsOpen" />
+                <span class="switch-track"></span>
+                <span>Open to join requests</span>
+            </label>
+        </EditForm>
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-ghost" @onclick="() => _editing = false">Cancel</button>
+        <button type="submit" form="edit-team-form" class="btn btn-primary" disabled="@IsBusy">Save changes</button>
+    </Footer>
+</Modal>
+
+<ConfirmDialog IsOpen="_confirmLeave"
+               Title="Leave this team?"
+               Message="You'll become available in Team Finder again. If you're the leader, leadership passes to the next member."
+               ConfirmText="Leave team"
+               OnConfirm="LeaveAsync"
+               OnCancel="() => _confirmLeave = false" />
+
+<ConfirmDialog IsOpen="_memberToRemove is not null"
+               Title="Remove member?"
+               Message="@($"{_memberToRemove?.User.Name} will be removed from the team and notified.")"
+               ConfirmText="Remove"
+               OnConfirm="RemoveMemberAsync"
+               OnCancel="() => _memberToRemove = null" />
+
+@code {
+    private static readonly TeamRole[] KeyRoles = { TeamRole.Frontend, TeamRole.Backend, TeamRole.Database, TeamRole.Testing, TeamRole.Documentation };
+
+    [Parameter]
+    public int TeamId { get; set; }
+
+    private bool _loading = true;
+    private Team? _team;
+    private IReadOnlyList<TeamMessage> _messages = Array.Empty<TeamMessage>();
+    private List<CandidateMatch> _candidates = new();
+    private List<TeamInvitation> _pendingInvites = new();
+    private Dictionary<AvailabilitySlot, int> _heat = new();
+    private List<TeamRole> _missingRoles = new();
+    private double _teamScore;
+    private string _draft = "";
+    private int _selectedCandidateId;
+    private bool _editing;
+    private bool _confirmLeave;
+    private TeamMember? _memberToRemove;
+    private TeamFormModel _form = new();
+    private ElementReference _chatElement;
+    private bool _scrollChat;
+    private bool _subscribed;
+
+    private bool IsLeader => _team?.LeaderId == UserId;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        _loading = true;
+        await LoadSafelyAsync(LoadTeamAsync);
+        await LoadSafelyAsync(LoadMessagesAsync);
+        _loading = false;
+
+        if (!_subscribed)
+        {
+            _subscribed = true;
+            SubscribeToRealtime(async realtimeEvent =>
+            {
+                if (realtimeEvent.Type == RealtimeEventType.TeamMessage && realtimeEvent.EntityId == TeamId)
+                {
+                    await LoadMessagesAsync();
+                }
+                else if (realtimeEvent.Type == RealtimeEventType.TeamChanged)
+                {
+                    await LoadTeamAsync();
+                }
+            });
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_scrollChat)
+        {
+            _scrollChat = false;
+            try
+            {
+                await JS.InvokeVoidAsync("studyConnect.scrollToBottom", _chatElement);
+            }
+            catch (JSException)
+            {
+                // Scrolling is cosmetic - ignore browser-side failures.
+            }
+        }
+    }
+
+    private async Task LoadTeamAsync()
+    {
+        _team = await TeamService.GetTeamAsync(TeamId);
+        if (_team is null || !_team.HasMember(UserId))
+        {
+            return;
+        }
+
+        // Team health: average compatibility over every pair of members.
+        List<StudentProfile> profiles = _team.Members
+            .Select(m => new StudentProfile(m.UserId, m.User.Name, m.User.Interests.Select(i => i.Name), m.User.AvailabilitySlots)
+            {
+                LabSlotId = _team.LabSlotId,
+                PreferredRole = m.Role
+            })
+            .ToList();
+
+        List<double> pairScores = new();
+        for (int i = 0; i < profiles.Count; i++)
+        {
+            for (int j = i + 1; j < profiles.Count; j++)
+            {
+                pairScores.Add(Engine.Evaluate(profiles[i], profiles[j]).Score);
+            }
+        }
+
+        _teamScore = pairScores.Count == 0 ? 0 : Math.Round(pairScores.Average(), 1);
+
+        // Heat map: how many members are free in each slot (GroupBy + ToDictionary).
+        _heat = profiles
+            .SelectMany(p => p.Availability)
+            .GroupBy(slot => slot)
+            .ToDictionary(group => group.Key, group => group.Count());
+
+        HashSet<TeamRole> covered = _team.Members.Select(m => m.Role).ToHashSet();
+        _missingRoles = covered.Contains(TeamRole.FullStack)
+            ? new List<TeamRole>()
+            : KeyRoles.Where(role => !covered.Contains(role)).ToList();
+
+        _pendingInvites = _team.Invitations.Where(i => i.Status == InvitationStatus.Pending).OrderByDescending(i => i.Id).ToList();
+
+        if (!_team.IsFull)
+        {
+            var filter = new TeamFinderFilter { SameLabOnly = true, OnlyAvailable = true };
+            TeamFinderResult result = await Matchmaking.FindTeammatesAsync(UserId, _team.SubjectId, filter);
+            _candidates = result.Candidates.Where(c => !c.HasPendingInvite && !c.InTeam).ToList();
+        }
+        else
+        {
+            _candidates = new List<CandidateMatch>();
+        }
+    }
+
+    private async Task LoadMessagesAsync()
+    {
+        _messages = await TeamService.GetMessagesAsync(UserId, TeamId);
+        _scrollChat = true;
+    }
+
+    private static MatchQuality QualityOf(double score) => score switch
+    {
+        >= 75 => MatchQuality.Excellent,
+        >= 55 => MatchQuality.Good,
+        >= 35 => MatchQuality.Fair,
+        _ => MatchQuality.Low
+    };
+
+    private async Task SendMessageAsync()
+    {
+        string text = _draft;
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return;
+        }
+
+        _draft = "";
+        TeamMessage? sent = await RunAsync(() => TeamService.PostMessageAsync(UserId, TeamId, text));
+        if (sent is null)
+        {
+            _draft = text; // keep the text so the user can retry
+        }
+    }
+
+    private async Task InviteSelectedAsync()
+    {
+        CandidateMatch? candidate = _candidates.FirstOrDefault(c => c.Profile.UserId == _selectedCandidateId);
+        if (candidate is null)
+        {
+            return;
+        }
+
+        if (await RunAsync(() => TeamService.InviteAsync(UserId, TeamId, candidate.Profile.UserId, null), $"Invitation sent to {candidate.Profile.Name}"))
+        {
+            _selectedCandidateId = 0;
+            await LoadSafelyAsync(LoadTeamAsync);
+        }
+    }
+
+    private async Task CancelInvitationAsync(TeamInvitation invitation)
+    {
+        if (await RunAsync(() => TeamService.CancelInvitationAsync(UserId, invitation.Id), "Invitation cancelled"))
+        {
+            await LoadSafelyAsync(LoadTeamAsync);
+        }
+    }
+
+    private void OpenEditor()
+    {
+        if (_team is null)
+        {
+            return;
+        }
+
+        _form = new TeamFormModel { Name = _team.Name, ProjectIdea = _team.ProjectIdea, IsOpen = _team.IsOpen, MaxMembers = _team.MaxMembers };
+        _editing = true;
+    }
+
+    private async Task SaveTeamAsync()
+    {
+        var request = new TeamUpdateRequest(_form.Name, _form.ProjectIdea, _form.IsOpen);
+        if (await RunAsync(() => TeamService.UpdateTeamAsync(UserId, TeamId, request), "Team updated"))
+        {
+            _editing = false;
+            await LoadSafelyAsync(LoadTeamAsync);
+        }
+    }
+
+    private async Task LeaveAsync()
+    {
+        _confirmLeave = false;
+        if (await RunAsync(() => TeamService.LeaveTeamAsync(UserId, TeamId), "You left the team"))
+        {
+            Navigation.NavigateTo("teams");
+        }
+    }
+
+    private async Task RemoveMemberAsync()
+    {
+        TeamMember? member = _memberToRemove;
+        _memberToRemove = null;
+        if (member is not null && await RunAsync(() => TeamService.RemoveMemberAsync(UserId, TeamId, member.UserId), $"{member.User.Name} was removed"))
+        {
+            await LoadSafelyAsync(LoadTeamAsync);
+        }
+    }
+
+    /// <summary>Builds a CSV file of the team roster and downloads it through JavaScript interop.</summary>
+    private async Task ExportRosterAsync()
+    {
+        if (_team is null)
+        {
+            return;
+        }
+
+        var csv = new StringBuilder();
+        csv.AppendLine("Name,Email,Contact,Role,Leader");
+        foreach (TeamMember member in _team.Members)
+        {
+            csv.AppendLine(string.Join(',',
+                Csv(member.User.Name),
+                Csv(member.User.Email),
+                Csv(member.User.ContactNumber),
+                Csv(member.Role.ToDisplayName()),
+                member.UserId == _team.LeaderId ? "Yes" : "No"));
+        }
+
+        string fileName = $"{_team.Subject.Code}-{_team.Name}-roster.csv".Replace(' ', '-');
+        try
+        {
+            await JS.InvokeVoidAsync("studyConnect.downloadFile", fileName, "text/csv", csv.ToString());
+            Toasts.Success("Roster exported");
+        }
+        catch (JSException)
+        {
+            Toasts.Error("Your browser blocked the download.");
+        }
+    }
+
+    private static string Csv(string? value)
+    {
+        string text = value ?? string.Empty;
+        if (!text.Contains(',') && !text.Contains('"'))
+        {
+            return text;
+        }
+
+        // Quote the value and double any embedded quotes (RFC 4180).
+        return "\"" + text.Replace("\"", "\"\"") + "\"";
+    }
+}

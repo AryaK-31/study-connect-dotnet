@@ -1,0 +1,10 @@
+## .NET / Visual Studio
+bin/
+obj/
+.vs/
+*.user
+*.suo
+TestResults/
+
+## Local runtime data (SQLite database, development e-mail outbox)
+**/App_Data/

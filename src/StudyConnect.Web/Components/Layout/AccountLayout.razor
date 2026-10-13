@@ -1,0 +1,28 @@
+@inherits LayoutComponentBase
+
+<div class="auth-shell">
+    <header class="auth-top">
+        <a class="brand" href="/">
+            <img src="images/logo.svg" alt="StudyConnect logo" width="30" height="30" />
+            <span>StudyConnect</span>
+        </a>
+        <button type="button" class="icon-btn" onclick="studyConnect.toggleTheme()" title="Toggle dark / light mode" aria-label="Toggle theme">🌓</button>
+    </header>
+
+    <div class="auth-body">
+        <section class="auth-hero" aria-hidden="true">
+            <img src="images/hero.svg" alt="" class="hero-art" />
+            <h2>Find your perfect assignment team from your own lab.</h2>
+            <ul class="hero-points">
+                <li><span>🎯</span> Smart compatibility scores (interests, free time, roles, goals)</li>
+                <li><span>👥</span> One-click team suggestions that respect lab rules</li>
+                <li><span>💬</span> Real-time chat with connections and team mates</li>
+                <li><span>📅</span> Study sessions anyone can create and join</li>
+            </ul>
+        </section>
+
+        <section class="auth-panel">
+            @Body
+        </section>
+    </div>
+</div>

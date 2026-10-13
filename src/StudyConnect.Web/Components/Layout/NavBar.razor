@@ -1,0 +1,157 @@
+@inherits AppComponentBase
+@inject IMessageService MessageService
+@inject ITeamService TeamService
+@inject IProfileService ProfileService
+@inject IJSRuntime JS
+
+<header class="navbar">
+    <div class="nav-inner">
+        <a class="brand" href="/">
+            <img src="images/logo.svg" alt="StudyConnect logo" width="28" height="28" />
+            <span>StudyConnect</span>
+        </a>
+
+        <nav class="@NavLinksClass" aria-label="Main navigation">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">Dashboard</NavLink>
+            <NavLink class="nav-link" href="team-finder">Team Finder</NavLink>
+            <NavLink class="nav-link" href="teams">
+                My Teams
+                @if (_pendingInvitations > 0)
+                {
+                    <span class="pill">@_pendingInvitations</span>
+                }
+            </NavLink>
+            <NavLink class="nav-link" href="sessions">Sessions</NavLink>
+            <NavLink class="nav-link" href="messages">
+                Messages
+                @if (_unreadMessages > 0)
+                {
+                    <span class="pill">@(_unreadMessages > 9 ? "9+" : _unreadMessages.ToString(CultureInfo.InvariantCulture))</span>
+                }
+            </NavLink>
+            <NavLink class="nav-link" href="connections">Connections</NavLink>
+            <NavLink class="nav-link" href="insights">Insights</NavLink>
+        </nav>
+
+        <div class="nav-actions">
+            <button class="icon-btn" title="Toggle dark / light mode" aria-label="Toggle theme" @onclick="ToggleThemeAsync">🌓</button>
+
+            <NotificationBell />
+
+            <div class="dropdown">
+                <button class="avatar-btn" @onclick="ToggleUserMenu" aria-label="Account menu" title="@_userName">
+                    <Avatar Name="@_userName" Size="sm" />
+                </button>
+                @if (_userMenuOpen)
+                {
+                    <div class="click-catcher" @onclick="CloseMenus"></div>
+                    <div class="dropdown-menu right">
+                        <div class="dropdown-header">
+                            <strong>@_userName</strong>
+                            <span class="muted small">@_userEmail</span>
+                        </div>
+                        <a class="menu-item" href="profile" @onclick="CloseMenus">👤 My profile</a>
+                        <a class="menu-item" href="subjects" @onclick="CloseMenus">🎓 My subjects &amp; labs</a>
+                        <a class="menu-item" href="connections" @onclick="CloseMenus">🤝 Connections</a>
+                        <div class="menu-divider"></div>
+                        @* A normal HTML form post: the server clears the auth cookie and redirects to the login page. *@
+                        <form method="post" action="account/logout">
+                            <button type="submit" class="menu-item danger">↩ Log out</button>
+                        </form>
+                    </div>
+                }
+            </div>
+
+            <button class="icon-btn mobile-toggle" aria-label="Open menu" @onclick="ToggleMobileMenu">☰</button>
+        </div>
+    </div>
+</header>
+
+@code {
+    private int _unreadMessages;
+    private int _pendingInvitations;
+    private string _userName = "";
+    private string _userEmail = "";
+    private bool _userMenuOpen;
+    private bool _mobileMenuOpen;
+
+    private string NavLinksClass => _mobileMenuOpen ? "nav-links open" : "nav-links";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        Navigation.LocationChanged += OnLocationChanged;
+
+        await LoadSafelyAsync(async () =>
+        {
+            User? user = await ProfileService.GetUserAsync(UserId);
+            _userName = user?.Name ?? "Student";
+            _userEmail = user?.Email ?? "";
+            await RefreshCountersAsync();
+        });
+
+        SubscribeToRealtime(OnRealtimeEventAsync);
+    }
+
+    private async Task OnRealtimeEventAsync(RealtimeEvent realtimeEvent)
+    {
+        if (realtimeEvent.Type == RealtimeEventType.DirectMessage
+            && realtimeEvent.FromUserId != UserId
+            && !Navigation.Uri.Contains("/messages", StringComparison.OrdinalIgnoreCase))
+        {
+            Toasts.Info($"💬 New message: {realtimeEvent.Text}");
+        }
+
+        if (realtimeEvent.Type is RealtimeEventType.DirectMessage
+            or RealtimeEventType.MessagesRead
+            or RealtimeEventType.Notification
+            or RealtimeEventType.TeamChanged)
+        {
+            await RefreshCountersAsync();
+        }
+    }
+
+    private async Task RefreshCountersAsync()
+    {
+        _unreadMessages = await MessageService.GetUnreadCountAsync(UserId);
+        IReadOnlyList<TeamInvitation> invitations = await TeamService.GetPendingInvitationsAsync(UserId);
+        _pendingInvitations = invitations.Count;
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        try
+        {
+            await JS.InvokeAsync<string>("studyConnect.toggleTheme");
+        }
+        catch (JSException)
+        {
+            Toasts.Error("Could not switch theme in this browser.");
+        }
+    }
+
+    private void ToggleUserMenu() => _userMenuOpen = !_userMenuOpen;
+
+    private void ToggleMobileMenu() => _mobileMenuOpen = !_mobileMenuOpen;
+
+    private void CloseMenus()
+    {
+        _userMenuOpen = false;
+        _mobileMenuOpen = false;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _ = InvokeAsync(() =>
+        {
+            CloseMenus();
+            StateHasChanged();
+        });
+    }
+
+    protected override void OnDispose() => Navigation.LocationChanged -= OnLocationChanged;
+}

@@ -1,0 +1,89 @@
+@* Interactive horizontal bar chart built from plain HTML/CSS (no external charting library).
+   Hover or focus a bar to see its details; click it to raise OnSelect. *@
+<div class="chart">
+    @if (!string.IsNullOrEmpty(Title))
+    {
+        <h3 class="chart-title">@Title</h3>
+    }
+
+    @if (Data.Count == 0)
+    {
+        <p class="muted small">No data yet.</p>
+    }
+    else
+    {
+        <div class="bar-chart" role="list" aria-label="@Title">
+            @for (int i = 0; i < Data.Count; i++)
+            {
+                int index = i;
+                ChartDatum datum = Data[index];
+
+                <button type="button"
+                        role="listitem"
+                        class="@RowClass(index)"
+                        title="@(datum.Hint ?? datum.Label)"
+                        @onmouseover="() => Hover(index)"
+                        @onfocus="() => Hover(index)"
+                        @onmouseout="ClearHover"
+                        @onclick="() => SelectAsync(datum)">
+                    <span class="bar-label">@datum.Label</span>
+                    <span class="bar-track">
+                        <span class="bar-fill" style="@FillStyle(datum.Value)"></span>
+                    </span>
+                    <span class="bar-value">@Fmt(datum.Value)</span>
+                </button>
+            }
+        </div>
+        <div class="chart-detail">@DetailText</div>
+    }
+</div>
+
+@code {
+    private int? _hovered;
+
+    [Parameter]
+    public IReadOnlyList<ChartDatum> Data { get; set; } = Array.Empty<ChartDatum>();
+
+    [Parameter]
+    public string? Title { get; set; }
+
+    /// <summary>Colour variant: "primary", "accent" or "warm".</summary>
+    [Parameter]
+    public string Variant { get; set; } = "primary";
+
+    [Parameter]
+    public EventCallback<ChartDatum> OnSelect { get; set; }
+
+    private double MaxValue => Data.Count == 0 ? 0 : Data.Max(d => d.Value);
+
+    private string DetailText
+    {
+        get
+        {
+            if (_hovered is int index && index < Data.Count)
+            {
+                ChartDatum datum = Data[index];
+                return datum.Hint ?? $"{datum.Label}: {Fmt(datum.Value)}";
+            }
+
+            return "Hover over a bar for details";
+        }
+    }
+
+    private void Hover(int index) => _hovered = index;
+
+    private void ClearHover() => _hovered = null;
+
+    private string RowClass(int index) =>
+        _hovered == index ? $"bar-row {Variant} hovered" : $"bar-row {Variant}";
+
+    private string FillStyle(double value)
+    {
+        double percent = MaxValue <= 0 ? 0 : value / MaxValue * 100;
+        return "width: " + Math.Max(percent, 2).ToString("0.##", CultureInfo.InvariantCulture) + "%";
+    }
+
+    private Task SelectAsync(ChartDatum datum) => OnSelect.InvokeAsync(datum);
+
+    private static string Fmt(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
+}

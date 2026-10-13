@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Core / domain layer.
+    Contains entities, enums, service contracts (interfaces), the matching engine,
+    the machine-learning algorithms and extension methods.
+    It deliberately has NO external package dependencies so it stays easy to unit test.
+  -->
+  <PropertyGroup>
+    <RootNamespace>StudyConnect.Core</RootNamespace>
+    <AssemblyName>StudyConnect.Core</AssemblyName>
+  </PropertyGroup>
+
+</Project>

@@ -1,0 +1,24 @@
+@* Circular avatar showing the student's initials; the colour is derived from the name so it is stable. *@
+<span class="@CssClass" style="--avatar-hue: @Hue" title="@Name">
+    @Name.ToInitials()
+    @if (Online)
+    {
+        <span class="online-dot" title="Online now"></span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Name { get; set; } = "";
+
+    /// <summary>"sm", "md" (default) or "lg".</summary>
+    [Parameter]
+    public string Size { get; set; } = "md";
+
+    [Parameter]
+    public bool Online { get; set; }
+
+    private string CssClass => $"avatar avatar-{Size}";
+
+    private int Hue => (Name.Aggregate(17, (hash, c) => unchecked(hash * 31 + c)) & 0x7fffffff) % 360;
+}

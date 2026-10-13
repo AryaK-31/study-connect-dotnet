@@ -1,0 +1,27 @@
+[
+  {
+    "subjectCode": "31927",
+    "name": "Null Pointers",
+    "projectIdea": "Campus parking finder with live occupancy predictions.",
+    "leaderEmail": "noah@uts.edu.au",
+    "memberEmails": [
+      "fatima@uts.edu.au",
+      "isaac@uts.edu.au"
+    ],
+    "maxMembers": 3,
+    "isOpen": false,
+    "inviteEmails": []
+  },
+  {
+    "subjectCode": "31927",
+    "name": "LINQ Legends",
+    "projectIdea": "Recipe planner that suggests meals from what is in your fridge.",
+    "leaderEmail": "george@uts.edu.au",
+    "memberEmails": [],
+    "maxMembers": 3,
+    "isOpen": true,
+    "inviteEmails": [
+      "alice@uts.edu.au"
+    ]
+  }
+]

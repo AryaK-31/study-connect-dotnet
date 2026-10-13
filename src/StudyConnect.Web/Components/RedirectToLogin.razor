@@ -1,0 +1,11 @@
+@inject NavigationManager Navigation
+
+@code {
+    // Used by AuthorizeRouteView when an anonymous user reaches a protected page during
+    // interactive navigation (direct HTTP requests are redirected by the cookie middleware).
+    protected override void OnInitialized()
+    {
+        string returnUrl = Uri.EscapeDataString("/" + Navigation.ToBaseRelativePath(Navigation.Uri));
+        Navigation.NavigateTo($"account/login?returnUrl={returnUrl}", forceLoad: true);
+    }
+}

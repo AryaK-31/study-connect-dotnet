@@ -1,0 +1,107 @@
+@page "/account/login"
+@inject IAuthService AuthService
+
+<PageTitle>Log in · StudyConnect</PageTitle>
+
+<div class="auth-card">
+    @if (_redirectUrl is not null)
+    {
+        @* Signed in: the cookie is set on this response, then the browser moves on to the app. *@
+        <HeadContent>
+            <meta http-equiv="refresh" content="@($"0;url={_redirectUrl}")" />
+        </HeadContent>
+        <div class="auth-success">
+            <span class="spinner"></span>
+            <h1>Signing you in…</h1>
+            <a class="btn btn-primary" href="@_redirectUrl">Continue</a>
+        </div>
+    }
+    else
+    {
+        <h1>Welcome back</h1>
+        <p class="muted">Log in to find study partners and team mates from your lab.</p>
+
+        if (LoggedOut)
+        {
+            <div class="alert alert-success">You have been logged out. See you soon!</div>
+        }
+
+        if (Deleted)
+        {
+            <div class="alert alert-info">Your account and data have been deleted.</div>
+        }
+
+        if (!string.IsNullOrEmpty(_error))
+        {
+            <div class="alert alert-error">@_error</div>
+        }
+
+        <EditForm Model="Input" method="post" OnValidSubmit="LoginAsync" FormName="login" class="form">
+            <DataAnnotationsValidator />
+
+            <div class="field">
+                <label for="email" class="label">Email</label>
+                <InputText id="email" class="input" type="email" autocomplete="username" placeholder="you@uts.edu.au" @bind-Value="Input.Email" />
+                <ValidationMessage For="() => Input.Email" />
+            </div>
+
+            <div class="field">
+                <div class="label-row">
+                    <label for="password" class="label">Password</label>
+                    <a class="small" href="account/forgot-password">Forgot password?</a>
+                </div>
+                <InputText id="password" class="input" type="password" autocomplete="current-password" @bind-Value="Input.Password" />
+                <ValidationMessage For="() => Input.Password" />
+            </div>
+
+            <label class="checkbox">
+                <InputCheckbox @bind-Value="Input.RememberMe" />
+                <span>Keep me signed in for 7 days</span>
+            </label>
+
+            <button type="submit" class="btn btn-primary btn-block">Log in</button>
+        </EditForm>
+
+        <div class="demo-hint">
+            <strong>Demo account</strong>
+            <span><code>alice@uts.edu.au</code> / <code>@DatabaseSeeder.DemoPassword</code></span>
+        </div>
+
+        <p class="center small">New to StudyConnect? <a href="account/signup">Create an account</a></p>
+    }
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    [SupplyParameterFromForm]
+    private LoginInput Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    [SupplyParameterFromQuery]
+    private bool LoggedOut { get; set; }
+
+    [SupplyParameterFromQuery]
+    private bool Deleted { get; set; }
+
+    private string? _error;
+    private string? _redirectUrl;
+
+    private async Task LoginAsync()
+    {
+        Result<User> result = await AuthService.AuthenticateAsync(Input.Email, Input.Password);
+        if (!result.Succeeded || result.Value is null)
+        {
+            _error = result.Error;
+            return;
+        }
+
+        var properties = new AuthenticationProperties { IsPersistent = Input.RememberMe };
+        await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, UserPrincipalFactory.Create(result.Value), properties);
+
+        _redirectUrl = RedirectHelper.SafeLocalUrl(ReturnUrl);
+    }
+}

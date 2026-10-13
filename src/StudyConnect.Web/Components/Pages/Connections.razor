@@ -1,0 +1,193 @@
+@page "/connections"
+@inject IConnectionService ConnectionService
+
+<PageTitle>Connections · StudyConnect</PageTitle>
+
+<div class="container">
+    <header class="page-header">
+        <div>
+            <h1>🤝 Connections</h1>
+            <p class="muted">Connect with students before chatting. Requests you receive also appear in the 🔔 menu.</p>
+        </div>
+        <input class="input search-box" type="search" placeholder="Search by name or interest…" @bind="_search" @bind:event="oninput" />
+    </header>
+
+    <div class="tabs" role="tablist">
+        <button class="@TabClass(ConnectionTab.Connected)" @onclick="() => _tab = ConnectionTab.Connected">
+            My connections <span class="pill">@_connections.Count</span>
+        </button>
+        <button class="@TabClass(ConnectionTab.Incoming)" @onclick="() => _tab = ConnectionTab.Incoming">
+            Requests received <span class="pill">@_incoming.Count</span>
+        </button>
+        <button class="@TabClass(ConnectionTab.Outgoing)" @onclick="() => _tab = ConnectionTab.Outgoing">
+            Requests sent <span class="pill">@_outgoing.Count</span>
+        </button>
+    </div>
+
+    @if (_loading)
+    {
+        <div class="page-loading"><span class="spinner"></span> Loading connections…</div>
+    }
+    else if (CurrentList.Count == 0)
+    {
+        <EmptyState Icon="@EmptyIcon" Title="@EmptyTitle" Message="Use Team Finder or the dashboard to discover students with similar interests.">
+            <a class="btn btn-primary btn-sm" href="team-finder">Find students</a>
+        </EmptyState>
+    }
+    else
+    {
+        <div class="card-grid">
+            @foreach (User person in CurrentList)
+            {
+                <article class="card person-card">
+                    <div class="row gap">
+                        <Avatar Name="@person.Name" Size="lg" Online="Realtime.IsOnline(person.Id)" />
+                        <div>
+                            <h3>@person.Name</h3>
+                            <span class="muted small block">@(person.Degree ?? person.Email)</span>
+                        </div>
+                    </div>
+                    <div class="chip-list">
+                        @foreach (string interest in person.InterestNames.Take(5))
+                        {
+                            <span class="chip static">@interest</span>
+                        }
+                    </div>
+                    <div class="card-actions">
+                        @switch (_tab)
+                        {
+                            case ConnectionTab.Connected:
+                                <a class="btn btn-primary btn-sm" href="@($"messages/{person.Id}")">💬 Message</a>
+                                <button class="btn btn-ghost btn-sm" disabled="@IsBusy" @onclick="() => _personToRemove = person">Remove</button>
+                                break;
+                            case ConnectionTab.Incoming:
+                                <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="() => AcceptAsync(person)">✓ Accept</button>
+                                <button class="btn btn-ghost btn-sm" disabled="@IsBusy" @onclick="() => DeclineAsync(person)">Decline</button>
+                                break;
+                            default:
+                                <span class="badge">Pending</span>
+                                <button class="btn btn-ghost btn-sm" disabled="@IsBusy" @onclick="() => CancelAsync(person)">Cancel request</button>
+                                break;
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+<ConfirmDialog IsOpen="_personToRemove is not null"
+               Title="Remove connection?"
+               Message="@($"You and {_personToRemove?.Name} will no longer be able to message each other.")"
+               ConfirmText="Remove"
+               OnConfirm="RemoveAsync"
+               OnCancel="() => _personToRemove = null" />
+
+@code {
+    private enum ConnectionTab
+    {
+        Connected,
+        Incoming,
+        Outgoing
+    }
+
+    private bool _loading = true;
+    private ConnectionTab _tab = ConnectionTab.Connected;
+    private IReadOnlyList<User> _connections = Array.Empty<User>();
+    private IReadOnlyList<User> _incoming = Array.Empty<User>();
+    private IReadOnlyList<User> _outgoing = Array.Empty<User>();
+    private string _search = "";
+    private User? _personToRemove;
+
+    /// <summary>The list for the selected tab, filtered by the search box (LINQ + lambda).</summary>
+    private List<User> CurrentList =>
+        (_tab switch
+        {
+            ConnectionTab.Connected => _connections,
+            ConnectionTab.Incoming => _incoming,
+            _ => _outgoing
+        })
+        .Where(u => u.Name.ContainsIgnoreCase(_search) || u.Interests.Any(i => i.Name.ContainsIgnoreCase(_search)))
+        .ToList();
+
+    private string EmptyIcon => _tab == ConnectionTab.Connected ? "🤝" : "📭";
+
+    private string EmptyTitle => _tab switch
+    {
+        ConnectionTab.Connected => "No connections yet",
+        ConnectionTab.Incoming => "No pending requests",
+        _ => "You haven't sent any requests"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        if (Navigation.Uri.Contains("tab=requests", StringComparison.OrdinalIgnoreCase))
+        {
+            _tab = ConnectionTab.Incoming;
+        }
+
+        await LoadSafelyAsync(LoadAsync);
+        _loading = false;
+
+        if (_connections.Count == 0 && _incoming.Count > 0)
+        {
+            _tab = ConnectionTab.Incoming;
+        }
+
+        SubscribeToRealtime(async realtimeEvent =>
+        {
+            if (realtimeEvent.Type == RealtimeEventType.ConnectionChanged)
+            {
+                await LoadSafelyAsync(LoadAsync);
+            }
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        _connections = await ConnectionService.GetConnectionsAsync(UserId);
+        _incoming = await ConnectionService.GetIncomingRequestsAsync(UserId);
+        _outgoing = await ConnectionService.GetOutgoingRequestsAsync(UserId);
+    }
+
+    private string TabClass(ConnectionTab tab) => _tab == tab ? "tab active" : "tab";
+
+    private async Task AcceptAsync(User person)
+    {
+        if (await RunAsync(() => ConnectionService.AcceptAsync(UserId, person.Id), $"You're now connected with {person.Name}"))
+        {
+            await LoadSafelyAsync(LoadAsync);
+        }
+    }
+
+    private async Task DeclineAsync(User person)
+    {
+        if (await RunAsync(() => ConnectionService.DeclineAsync(UserId, person.Id), "Request declined"))
+        {
+            await LoadSafelyAsync(LoadAsync);
+        }
+    }
+
+    private async Task CancelAsync(User person)
+    {
+        if (await RunAsync(() => ConnectionService.RemoveAsync(UserId, person.Id), "Request cancelled"))
+        {
+            await LoadSafelyAsync(LoadAsync);
+        }
+    }
+
+    private async Task RemoveAsync()
+    {
+        User? person = _personToRemove;
+        _personToRemove = null;
+        if (person is not null && await RunAsync(() => ConnectionService.RemoveAsync(UserId, person.Id), "Connection removed"))
+        {
+            await LoadSafelyAsync(LoadAsync);
+        }
+    }
+}

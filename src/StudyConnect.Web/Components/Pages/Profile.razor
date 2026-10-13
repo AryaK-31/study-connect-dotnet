@@ -1,0 +1,317 @@
+@page "/profile"
+@inject IProfileService ProfileService
+@inject IAuthService AuthService
+
+<PageTitle>My profile · StudyConnect</PageTitle>
+
+<div class="container narrow">
+    <header class="page-header">
+        <div>
+            <h1>@(Welcome ? "Welcome! Let's set up your profile" : "My profile")</h1>
+            <p class="muted">Your interests and free time power the matching algorithm, and the more you share, the better your matches.</p>
+        </div>
+    </header>
+
+    @if (_loading)
+    {
+        <div class="page-loading"><span class="spinner"></span> Loading profile…</div>
+    }
+    else
+    {
+        <div class="tabs" role="tablist">
+            <button class="@TabClass(ProfileTab.Details)" role="tab" @onclick="() => _tab = ProfileTab.Details">Profile</button>
+            <button class="@TabClass(ProfileTab.Security)" role="tab" @onclick="() => _tab = ProfileTab.Security">Security</button>
+            <button class="@TabClass(ProfileTab.Danger)" role="tab" @onclick="() => _tab = ProfileTab.Danger">Delete account</button>
+        </div>
+
+        if (_tab == ProfileTab.Details)
+        {
+            <section class="card">
+                <h2>About you</h2>
+                <EditForm id="profile-form" Model="_form" OnValidSubmit="SaveAsync" class="form">
+                    <DataAnnotationsValidator />
+                    <div class="form-row">
+                        <div class="field">
+                            <label class="label" for="name">Full name</label>
+                            <InputText id="name" class="input" @bind-Value="_form.Name" />
+                            <ValidationMessage For="() => _form.Name" />
+                        </div>
+                        <div class="field">
+                            <label class="label" for="phone">Contact number</label>
+                            <InputText id="phone" class="input" type="tel" placeholder="e.g. 0412 345 678" @bind-Value="_form.ContactNumber" />
+                            <ValidationMessage For="() => _form.ContactNumber" />
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="degree">Degree</label>
+                        <InputText id="degree" class="input" list="degree-options" placeholder="e.g. Bachelor of Information Technology" @bind-Value="_form.Degree" />
+                        <datalist id="degree-options">
+                            @foreach (string degree in DegreeOptions)
+                            {
+                                <option value="@degree"></option>
+                            }
+                        </datalist>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="bio">Short bio <span class="muted small">(@(_form.Bio?.Length ?? 0)/500)</span></label>
+                        <InputTextArea id="bio" class="textarea" rows="3" placeholder="What do you enjoy working on? What are you good at?" @bind-Value="_form.Bio" />
+                        <ValidationMessage For="() => _form.Bio" />
+                    </div>
+                </EditForm>
+            </section>
+
+            <section class="card">
+                <h2>Interests <span class="muted small">(@_interests.Count/@InputValidators.MaxInterests)</span></h2>
+                <p class="muted small">Topics you'd love to study or build projects around.</p>
+
+                <div class="chip-list">
+                    @if (_interests.Count == 0)
+                    {
+                        <span class="muted small">No interests yet, pick some below.</span>
+                    }
+                    @foreach (string interest in _interests)
+                    {
+                        <span class="chip selected">
+                            @interest.ToTitleCase()
+                            <button type="button" class="chip-remove" aria-label="Remove interest" @onclick="() => RemoveInterest(interest)">✕</button>
+                        </span>
+                    }
+                </div>
+
+                <div class="input-group">
+                    <input class="input" placeholder="Add your own (e.g. Blazor, Robotics)…" maxlength="40" list="interest-suggestions"
+                           @bind="_customInterest" @bind:event="oninput" @onkeyup="OnInterestKeyUp" />
+                    <datalist id="interest-suggestions">
+                        @foreach (string suggestion in _suggestions)
+                        {
+                            <option value="@suggestion"></option>
+                        }
+                    </datalist>
+                    <button type="button" class="btn btn-secondary" @onclick="AddCustomInterest">Add</button>
+                </div>
+
+                <p class="small muted mt">Popular with other students:</p>
+                <div class="chip-list">
+                    @foreach (string suggestion in _suggestions.Where(s => !_interests.Contains(s.NormalizeTag())).Take(14))
+                    {
+                        <button type="button" class="chip" @onclick="() => AddInterest(suggestion)">+ @suggestion</button>
+                    }
+                </div>
+            </section>
+
+            <section class="card">
+                <h2>When are you free? <span class="muted small">(@_availability.Count slots)</span></h2>
+                <p class="muted small">Tap the time blocks that usually work for you. Team mates with overlapping free time score higher.</p>
+                <AvailabilityGrid @bind-Value="_availability" />
+            </section>
+
+            <div class="sticky-actions">
+                <button type="submit" form="profile-form" class="btn btn-primary" disabled="@IsBusy">
+                    @(IsBusy ? "Saving…" : "Save profile")
+                </button>
+            </div>
+        }
+        else if (_tab == ProfileTab.Security)
+        {
+            <section class="card">
+                <h2>Change password</h2>
+                <EditForm Model="_password" OnValidSubmit="ChangePasswordAsync" class="form">
+                    <DataAnnotationsValidator />
+                    <div class="field">
+                        <label class="label" for="current">Current password</label>
+                        <InputText id="current" type="password" class="input" autocomplete="current-password" @bind-Value="_password.CurrentPassword" />
+                        <ValidationMessage For="() => _password.CurrentPassword" />
+                    </div>
+                    <div class="form-row">
+                        <div class="field">
+                            <label class="label" for="new">New password</label>
+                            <InputText id="new" type="password" class="input" autocomplete="new-password" @bind-Value="_password.NewPassword" />
+                            <ValidationMessage For="() => _password.NewPassword" />
+                        </div>
+                        <div class="field">
+                            <label class="label" for="confirm">Confirm new password</label>
+                            <InputText id="confirm" type="password" class="input" autocomplete="new-password" @bind-Value="_password.ConfirmPassword" />
+                            <ValidationMessage For="() => _password.ConfirmPassword" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary" disabled="@IsBusy">Update password</button>
+                </EditForm>
+            </section>
+        }
+        else
+        {
+            <section class="card danger-zone">
+                <h2>Delete account</h2>
+                <p>This permanently deletes your profile, messages, connections and the study sessions you created.
+                   Teams you lead are handed over to another member. <strong>This cannot be undone.</strong></p>
+                <button class="btn btn-danger" @onclick="() => _confirmDelete = true">Delete my account</button>
+            </section>
+        }
+    }
+</div>
+
+<ConfirmDialog IsOpen="_confirmDelete"
+               Title="Delete your account?"
+               Message="All of your data will be removed permanently. Are you absolutely sure?"
+               ConfirmText="Yes, delete everything"
+               OnConfirm="DeleteAccountAsync"
+               OnCancel="() => _confirmDelete = false" />
+
+@code {
+    private enum ProfileTab
+    {
+        Details,
+        Security,
+        Danger
+    }
+
+    private static readonly string[] DefaultInterests =
+    {
+        "AI", "Machine Learning", "Data Science", "Web Development", "Cloud Computing", "Cyber Security",
+        "Mobile Apps", "C#", ".NET", "Blazor", "SQL", "UI/UX Design", "Game Development", "DevOps", "Python", "Algorithms"
+    };
+
+    private static readonly string[] DegreeOptions =
+    {
+        "Bachelor of Information Technology", "Bachelor of Computing Science", "Bachelor of Engineering (Software)",
+        "Bachelor of Science (Analytics)", "Bachelor of Design in Interaction", "Master of Information Technology",
+        "Master of Data Science and Innovation"
+    };
+
+    [SupplyParameterFromQuery]
+    public bool Welcome { get; set; }
+
+    private bool _loading = true;
+    private ProfileTab _tab = ProfileTab.Details;
+    private ProfileFormModel _form = new();
+    private ChangePasswordInput _password = new();
+    private List<string> _interests = new();
+    private List<string> _suggestions = new();
+    private WeeklyAvailability _availability = new();
+    private string _customInterest = "";
+    private bool _confirmDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(async () =>
+        {
+            User? user = await ProfileService.GetUserAsync(UserId);
+            if (user is null)
+            {
+                Navigation.NavigateTo("account/login", forceLoad: true);
+                return;
+            }
+
+            _form = new ProfileFormModel
+            {
+                Name = user.Name,
+                ContactNumber = user.ContactNumber,
+                Degree = user.Degree,
+                Bio = user.Bio
+            };
+
+            _interests = user.Interests.Select(i => i.Name).OrderBy(i => i).ToList();
+            _availability = new WeeklyAvailability(user.AvailabilitySlots);
+
+            IReadOnlyList<string> popular = await ProfileService.GetPopularInterestsAsync();
+            _suggestions = popular.Concat(DefaultInterests)
+                .DistinctBy(s => s.NormalizeTag())
+                .ToList();
+        });
+
+        _loading = false;
+    }
+
+    private string TabClass(ProfileTab tab) => _tab == tab ? "tab active" : "tab";
+
+    private void AddInterest(string value)
+    {
+        string normalized = value.NormalizeTag();
+        if (normalized.Length == 0)
+        {
+            return;
+        }
+
+        if (normalized.Length > InputValidators.MaxInterestLength)
+        {
+            Toasts.Error($"Interests must be {InputValidators.MaxInterestLength} characters or fewer.");
+            return;
+        }
+
+        if (_interests.Count >= InputValidators.MaxInterests)
+        {
+            Toasts.Error($"You can choose up to {InputValidators.MaxInterests} interests.");
+            return;
+        }
+
+        if (!_interests.Contains(normalized))
+        {
+            _interests.Add(normalized);
+        }
+    }
+
+    private void AddCustomInterest()
+    {
+        AddInterest(_customInterest);
+        _customInterest = "";
+    }
+
+    private void OnInterestKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddCustomInterest();
+        }
+    }
+
+    private void RemoveInterest(string interest) => _interests.Remove(interest);
+
+    private async Task SaveAsync()
+    {
+        if (_interests.Count == 0)
+        {
+            Toasts.Error("Please add at least one interest.");
+            return;
+        }
+
+        if (_availability.IsEmpty)
+        {
+            Toasts.Error("Please select at least one time you're available.");
+            return;
+        }
+
+        var update = new ProfileUpdate(_form.Name, _form.ContactNumber, _form.Degree, _form.Bio, _interests, _availability.ToList());
+        if (await RunAsync(() => ProfileService.UpdateProfileAsync(UserId, update), "Profile saved ✓") && Welcome)
+        {
+            // First-time setup: next step is enrolling in a subject so Team Finder works.
+            Navigation.NavigateTo("subjects?welcome=true");
+        }
+    }
+
+    private async Task ChangePasswordAsync()
+    {
+        bool changed = await RunAsync(
+            () => AuthService.ChangePasswordAsync(UserId, _password.CurrentPassword, _password.NewPassword, _password.ConfirmPassword),
+            "Password updated");
+
+        if (changed)
+        {
+            _password = new ChangePasswordInput();
+        }
+    }
+
+    private async Task DeleteAccountAsync()
+    {
+        _confirmDelete = false;
+        if (await RunAsync(() => ProfileService.DeleteAccountAsync(UserId)))
+        {
+            // The cookie is rejected on the next request because the account no longer exists.
+            Navigation.NavigateTo("account/login?deleted=true", forceLoad: true);
+        }
+    }
+}

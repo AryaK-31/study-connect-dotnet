@@ -1,0 +1,402 @@
+[
+  {
+    "email": "alice@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 02",
+    "role": "Backend",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": "Keen to build something with a real ML feature. I can own the back-end + EF Core."
+  },
+  {
+    "email": "bob@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 02",
+    "role": "Frontend",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": "Blazor UI and component design. Available most afternoons."
+  },
+  {
+    "email": "diana@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 02",
+    "role": "Design",
+    "skill": "Intermediate",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": "I'll make our screens look professional and handle the report visuals."
+  },
+  {
+    "email": "george@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 02",
+    "role": "Database",
+    "skill": "Advanced",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": "EF Core + SQL. I like clean data models."
+  },
+  {
+    "email": "priya@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 02",
+    "role": "FullStack",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": "Want to build a smart recommender \u2014 let's aim for the bonus marks."
+  },
+  {
+    "email": "wendy@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 02",
+    "role": "Frontend",
+    "skill": "Intermediate",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": "Blazor components & CSS. Meetings Wed/Fri work best."
+  },
+  {
+    "email": "rahul@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 02",
+    "role": "Testing",
+    "skill": "Intermediate",
+    "goal": "Credit",
+    "lookingForTeam": true,
+    "pitch": "NUnit tests and algorithms. Happy to write the test suite."
+  },
+  {
+    "email": "zack@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 02",
+    "role": "FullStack",
+    "skill": "Beginner",
+    "goal": "Credit",
+    "lookingForTeam": true,
+    "pitch": "Still learning C# but I work hard and meet deadlines."
+  },
+  {
+    "email": "noah@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 01",
+    "role": "FullStack",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": false,
+    "pitch": "Blazor + Azure."
+  },
+  {
+    "email": "ethan@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 01",
+    "role": "Frontend",
+    "skill": "Beginner",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": "Mobile background, learning Blazor."
+  },
+  {
+    "email": "fatima@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 01",
+    "role": "Backend",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": false,
+    "pitch": ""
+  },
+  {
+    "email": "isaac@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 01",
+    "role": "FullStack",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": false,
+    "pitch": ""
+  },
+  {
+    "email": "hannah@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 03",
+    "role": "Database",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": "SQL + data analysis."
+  },
+  {
+    "email": "kai@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 03",
+    "role": "Backend",
+    "skill": "Advanced",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": "I can set up CI and deployment."
+  },
+  {
+    "email": "maya@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 03",
+    "role": "FullStack",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": "NLP features would be cool."
+  },
+  {
+    "email": "olivia@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 03",
+    "role": "Design",
+    "skill": "Intermediate",
+    "goal": "Credit",
+    "lookingForTeam": true,
+    "pitch": "Figma prototypes first, then build."
+  },
+  {
+    "email": "charlie@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 04",
+    "role": "Testing",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": "Security testing + NUnit."
+  },
+  {
+    "email": "liam@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 04",
+    "role": "Backend",
+    "skill": "Intermediate",
+    "goal": "Credit",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "sofia@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 04",
+    "role": "Frontend",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": "Front-end perfectionist."
+  },
+  {
+    "email": "tom@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 04",
+    "role": "FullStack",
+    "skill": "Beginner",
+    "goal": "Pass",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "yasmin@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 04",
+    "role": "Backend",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": "Computer vision in C#? Let's do it."
+  },
+  {
+    "email": "jasmine@uts.edu.au",
+    "subjectCode": "31927",
+    "labCode": "Lab 03",
+    "role": "Frontend",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "amelia@uts.edu.au",
+    "subjectCode": "32998",
+    "labCode": "Lab 01",
+    "role": "Backend",
+    "skill": "Intermediate",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "ben@uts.edu.au",
+    "subjectCode": "32998",
+    "labCode": "Lab 01",
+    "role": "Testing",
+    "skill": "Intermediate",
+    "goal": "Credit",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "chloe@uts.edu.au",
+    "subjectCode": "32998",
+    "labCode": "Lab 02",
+    "role": "Design",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "daniel@uts.edu.au",
+    "subjectCode": "32998",
+    "labCode": "Lab 02",
+    "role": "Backend",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "uma@uts.edu.au",
+    "subjectCode": "32998",
+    "labCode": "Lab 01",
+    "role": "Database",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "victor@uts.edu.au",
+    "subjectCode": "32998",
+    "labCode": "Lab 02",
+    "role": "Testing",
+    "skill": "Intermediate",
+    "goal": "Credit",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "alice@uts.edu.au",
+    "subjectCode": "DEMO-ML",
+    "labCode": "Lab A",
+    "role": "Backend",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "fatima@uts.edu.au",
+    "subjectCode": "DEMO-ML",
+    "labCode": "Lab A",
+    "role": "FullStack",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "maya@uts.edu.au",
+    "subjectCode": "DEMO-ML",
+    "labCode": "Lab A",
+    "role": "Backend",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "uma@uts.edu.au",
+    "subjectCode": "DEMO-ML",
+    "labCode": "Lab B",
+    "role": "Database",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "yasmin@uts.edu.au",
+    "subjectCode": "DEMO-ML",
+    "labCode": "Lab A",
+    "role": "Frontend",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "hannah@uts.edu.au",
+    "subjectCode": "DEMO-ML",
+    "labCode": "Lab B",
+    "role": "Testing",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "amelia@uts.edu.au",
+    "subjectCode": "DEMO-ML",
+    "labCode": "Lab B",
+    "role": "FullStack",
+    "skill": "Advanced",
+    "goal": "HighDistinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "bob@uts.edu.au",
+    "subjectCode": "DEMO-WEB",
+    "labCode": "Lab A",
+    "role": "Frontend",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "jasmine@uts.edu.au",
+    "subjectCode": "DEMO-WEB",
+    "labCode": "Lab A",
+    "role": "Frontend",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "sofia@uts.edu.au",
+    "subjectCode": "DEMO-WEB",
+    "labCode": "Lab A",
+    "role": "FullStack",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "zack@uts.edu.au",
+    "subjectCode": "DEMO-WEB",
+    "labCode": "Lab A",
+    "role": "Backend",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  },
+  {
+    "email": "xavier@uts.edu.au",
+    "subjectCode": "DEMO-WEB",
+    "labCode": "Lab A",
+    "role": "Backend",
+    "skill": "Intermediate",
+    "goal": "Distinction",
+    "lookingForTeam": true,
+    "pitch": ""
+  }
+]

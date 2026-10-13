@@ -1,0 +1,117 @@
+@inherits AppComponentBase
+@inject INotificationService NotificationService
+
+<div class="dropdown">
+    <button class="icon-btn" title="Notifications" aria-label="Notifications" @onclick="ToggleAsync">
+        🔔
+        @if (_unread > 0)
+        {
+            <span class="badge-dot">@(_unread > 9 ? "9+" : _unread.ToString(CultureInfo.InvariantCulture))</span>
+        }
+    </button>
+
+    @if (_open)
+    {
+        <div class="click-catcher" @onclick="Close"></div>
+        <div class="dropdown-menu right wide" role="menu">
+            <div class="dropdown-header row between">
+                <strong>Notifications</strong>
+                @if (_unread > 0)
+                {
+                    <button class="link-btn" @onclick="MarkAllReadAsync">Mark all as read</button>
+                }
+            </div>
+
+            @if (_items.Count == 0)
+            {
+                <p class="muted small pad">You're all caught up ✨</p>
+            }
+            else
+            {
+                <div class="notification-list">
+                    @foreach (Notification item in _items)
+                    {
+                        <a class="@NotificationClass(item)" href="@(item.Link ?? "/")" @onclick="Close">
+                            <span class="notification-icon">@IconFor(item.Type)</span>
+                            <span class="notification-text">
+                                <strong>@item.Title</strong>
+                                @if (!string.IsNullOrEmpty(item.Body))
+                                {
+                                    <small>@item.Body</small>
+                                }
+                                <small class="muted">@item.CreatedAtUtc.ToRelativeTime()</small>
+                            </span>
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool _open;
+    private int _unread;
+    private IReadOnlyList<Notification> _items = Array.Empty<Notification>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(LoadAsync);
+        SubscribeToRealtime(OnRealtimeEventAsync);
+    }
+
+    private async Task OnRealtimeEventAsync(RealtimeEvent realtimeEvent)
+    {
+        if (realtimeEvent.Type == RealtimeEventType.Notification)
+        {
+            Toasts.Info($"🔔 {realtimeEvent.Text}");
+            await LoadAsync();
+        }
+    }
+
+    private async Task LoadAsync()
+    {
+        _items = await NotificationService.GetRecentAsync(UserId);
+        _unread = await NotificationService.GetUnreadCountAsync(UserId);
+    }
+
+    private async Task ToggleAsync()
+    {
+        _open = !_open;
+        if (_open)
+        {
+            await LoadSafelyAsync(LoadAsync);
+        }
+    }
+
+    private void Close() => _open = false;
+
+    private async Task MarkAllReadAsync()
+    {
+        await LoadSafelyAsync(async () =>
+        {
+            await NotificationService.MarkAllReadAsync(UserId);
+            await LoadAsync();
+        });
+    }
+
+    private static string NotificationClass(Notification item) => item.IsRead ? "notification" : "notification unread";
+
+    // Switch expression mapping each enum value to an icon.
+    private static string IconFor(NotificationType type) => type switch
+    {
+        NotificationType.ConnectionRequest => "🤝",
+        NotificationType.ConnectionAccepted => "✅",
+        NotificationType.SessionJoined => "📅",
+        NotificationType.SessionCancelled => "🚫",
+        NotificationType.TeamInvite => "✉️",
+        NotificationType.TeamJoinRequest => "🙋",
+        NotificationType.TeamUpdate => "👥",
+        _ => "📣"
+    };
+}

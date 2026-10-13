@@ -1,0 +1,60 @@
+@inherits AppComponentBase
+@inject IConnectionService ConnectionService
+
+@* Shows the right action for the relationship with another student. *@
+@switch (Status)
+{
+    case PeerStatus.Connected:
+        <a class="btn btn-secondary btn-sm" href="@($"messages/{OtherUserId}")">💬 Message</a>
+        break;
+
+    case PeerStatus.RequestSent:
+        <button class="btn btn-ghost btn-sm" disabled="@IsBusy" title="Click to cancel your request" @onclick="CancelAsync">⏳ Requested</button>
+        break;
+
+    case PeerStatus.RequestReceived:
+        <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="AcceptAsync">✓ Accept request</button>
+        break;
+
+    default:
+        <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="ConnectAsync">+ Connect</button>
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public int OtherUserId { get; set; }
+
+    [Parameter]
+    public PeerStatus Status { get; set; }
+
+    /// <summary>Raised after the relationship changed so the parent can refresh.</summary>
+    [Parameter]
+    public EventCallback OnChanged { get; set; }
+
+    protected override Task OnInitializedAsync() => EnsureUserAsync();
+
+    private async Task ConnectAsync()
+    {
+        if (await RunAsync(() => ConnectionService.SendRequestAsync(UserId, OtherUserId), "Connection request sent"))
+        {
+            await OnChanged.InvokeAsync();
+        }
+    }
+
+    private async Task AcceptAsync()
+    {
+        if (await RunAsync(() => ConnectionService.AcceptAsync(UserId, OtherUserId), "Connected! You can now chat."))
+        {
+            await OnChanged.InvokeAsync();
+        }
+    }
+
+    private async Task CancelAsync()
+    {
+        if (await RunAsync(() => ConnectionService.RemoveAsync(UserId, OtherUserId), "Request cancelled"))
+        {
+            await OnChanged.InvokeAsync();
+        }
+    }
+}

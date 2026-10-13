@@ -1,0 +1,167 @@
+@page "/teams"
+@inject ITeamService TeamService
+
+<PageTitle>My teams · StudyConnect</PageTitle>
+
+<div class="container">
+    <header class="page-header">
+        <div>
+            <h1>👥 My teams</h1>
+            <p class="muted">Your assignment groups, invitations and join requests.</p>
+        </div>
+        <a class="btn btn-primary" href="team-finder">🔍 Find team mates</a>
+    </header>
+
+    @if (_loading)
+    {
+        <div class="page-loading"><span class="spinner"></span> Loading teams…</div>
+    }
+    else
+    {
+        if (_invitationsForMe.Count > 0)
+        {
+            <section class="card highlight-card">
+                <h2>✉️ Invitations for you</h2>
+                <ul class="list">
+                    @foreach (TeamInvitation invitation in _invitationsForMe)
+                    {
+                        <li class="list-item">
+                            <div>
+                                <strong>@invitation.Team.Name</strong>
+                                <span class="muted small block">@invitation.Team.Subject.Code · @invitation.Team.LabSlot.Display · @invitation.Team.Members.Count/@invitation.Team.MaxMembers members</span>
+                                <span class="small block">@(string.Join(", ", invitation.Team.Members.Select(m => m.User.Name)))</span>
+                                @if (!string.IsNullOrWhiteSpace(invitation.Message))
+                                {
+                                    <span class="pitch small block">@($"“{invitation.Message}”")</span>
+                                }
+                            </div>
+                            <div class="row gap">
+                                <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="() => RespondAsync(invitation, true)">Accept</button>
+                                <button class="btn btn-ghost btn-sm" disabled="@IsBusy" @onclick="() => RespondAsync(invitation, false)">Decline</button>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        if (_joinRequests.Count > 0)
+        {
+            <section class="card highlight-card">
+                <h2>🙋 Requests to join your team</h2>
+                <ul class="list">
+                    @foreach (TeamInvitation request in _joinRequests)
+                    {
+                        <li class="list-item">
+                            <div class="row gap">
+                                <Avatar Name="@request.User.Name" Size="sm" Online="Realtime.IsOnline(request.UserId)" />
+                                <div>
+                                    <strong>@request.User.Name</strong>
+                                    <span class="muted small block">wants to join <strong>@request.Team.Name</strong> · @request.CreatedAtUtc.ToRelativeTime()</span>
+                                    @if (!string.IsNullOrWhiteSpace(request.Message))
+                                    {
+                                        <span class="pitch small block">@($"“{request.Message}”")</span>
+                                    }
+                                </div>
+                            </div>
+                            <div class="row gap">
+                                <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="() => RespondAsync(request, true)">Approve</button>
+                                <button class="btn btn-ghost btn-sm" disabled="@IsBusy" @onclick="() => RespondAsync(request, false)">Decline</button>
+                            </div>
+                        </li>
+                    }
+                </ul>
+            </section>
+        }
+
+        if (_teams.Count == 0)
+        {
+            <EmptyState Icon="🧩" Title="You're not in a team yet" Message="Team Finder suggests complete teams from students in your lab, or accept an invitation above.">
+                <a class="btn btn-primary" href="team-finder">Open Team Finder</a>
+            </EmptyState>
+        }
+        else
+        {
+            <div class="card-grid">
+                @foreach (Team team in _teams)
+                {
+                    <a class="card team-card" href="@($"teams/{team.Id}")">
+                        <div class="card-header">
+                            <div>
+                                <span class="eyebrow">@team.Subject.Code · @team.LabSlot.Code</span>
+                                <h2>@team.Name</h2>
+                            </div>
+                            @if (team.LeaderId == UserId)
+                            {
+                                <span class="badge badge-info">👑 Leader</span>
+                            }
+                        </div>
+                        @if (!string.IsNullOrWhiteSpace(team.ProjectIdea))
+                        {
+                            <p class="pitch">💡 @team.ProjectIdea</p>
+                        }
+                        <div class="avatar-stack">
+                            @foreach (TeamMember member in team.Members)
+                            {
+                                <Avatar Name="@member.User.Name" Size="sm" Online="Realtime.IsOnline(member.UserId)" />
+                            }
+                        </div>
+                        <div class="progress mt"><div class="progress-bar" style="@FillStyle(team)"></div></div>
+                        <span class="small muted">@team.Members.Count of @team.MaxMembers members · @(team.IsFull ? "Full" : $"{team.SpotsLeft} spot(s) left")</span>
+                    </a>
+                }
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool _loading = true;
+    private IReadOnlyList<Team> _teams = Array.Empty<Team>();
+    private List<TeamInvitation> _invitationsForMe = new();
+    private List<TeamInvitation> _joinRequests = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(LoadAsync);
+        _loading = false;
+
+        SubscribeToRealtime(async realtimeEvent =>
+        {
+            if (realtimeEvent.Type is RealtimeEventType.TeamChanged or RealtimeEventType.Notification)
+            {
+                await LoadSafelyAsync(LoadAsync);
+            }
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        _teams = await TeamService.GetTeamsForUserAsync(UserId);
+        IReadOnlyList<TeamInvitation> pending = await TeamService.GetPendingInvitationsAsync(UserId);
+
+        // Split one list into two with LINQ predicates.
+        _invitationsForMe = pending.Where(i => i.Kind == InvitationKind.Invite && i.UserId == UserId).ToList();
+        _joinRequests = pending.Where(i => i.Kind == InvitationKind.JoinRequest).ToList();
+    }
+
+    private async Task RespondAsync(TeamInvitation invitation, bool accept)
+    {
+        string message = accept
+            ? (invitation.Kind == InvitationKind.Invite ? $"Welcome to {invitation.Team.Name}! 🎉" : $"{invitation.User.Name} joined your team")
+            : "Declined";
+
+        if (await RunAsync(() => TeamService.RespondToInvitationAsync(UserId, invitation.Id, accept), message))
+        {
+            await LoadSafelyAsync(LoadAsync);
+        }
+    }
+
+    private static string FillStyle(Team team) =>
+        "width: " + (100.0 * team.Members.Count / Math.Max(1, team.MaxMembers)).ToString("0", CultureInfo.InvariantCulture) + "%";
+}

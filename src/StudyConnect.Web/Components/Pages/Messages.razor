@@ -1,0 +1,366 @@
+@page "/messages/{OtherUserId:int?}"
+@inject IMessageService MessageService
+@inject IJSRuntime JS
+
+<PageTitle>Messages · StudyConnect</PageTitle>
+
+<div class="container wide">
+    <div class="@(OtherUserId.HasValue ? "chat-layout has-selection" : "chat-layout")">
+        <aside class="chat-sidebar card">
+            <div class="chat-sidebar-header">
+                <h2>💬 Messages</h2>
+                <input class="input" type="search" placeholder="Search conversations…" @bind="_filter" @bind:event="oninput" />
+            </div>
+
+            @if (!_loading && _conversations.Count == 0)
+            {
+                <EmptyState Icon="🤝" Title="No conversations yet" Message="Connect with students first, then you can chat here in real time.">
+                    <a class="btn btn-primary btn-sm" href="team-finder">Find students</a>
+                </EmptyState>
+            }
+
+            <ul class="conversation-list">
+                @foreach (ConversationSummary conversation in VisibleConversations)
+                {
+                    <li>
+                        <a class="@ConversationClass(conversation)"
+                           href="@($"messages/{conversation.OtherUserId}")"
+                           @oncontextmenu="e => OpenContextMenu(e, conversation)"
+                           @oncontextmenu:preventDefault="true">
+                            <Avatar Name="@conversation.OtherUserName" Online="Realtime.IsOnline(conversation.OtherUserId)" />
+                            <span class="conversation-text">
+                                <span class="row between">
+                                    <strong>@conversation.OtherUserName</strong>
+                                    @if (conversation.LastMessageAtUtc is DateTime sentAt)
+                                    {
+                                        <span class="muted tiny">@sentAt.ToRelativeTime()</span>
+                                    }
+                                </span>
+                                <span class="muted small preview">@PreviewText(conversation)</span>
+                            </span>
+                            @if (conversation.UnreadCount > 0)
+                            {
+                                <span class="pill">@conversation.UnreadCount</span>
+                            }
+                        </a>
+                    </li>
+                }
+            </ul>
+            <p class="tiny muted pad">Tip: right-click a conversation for more options.</p>
+        </aside>
+
+        <section class="chat-panel card">
+            @if (_selected is null)
+            {
+                <EmptyState Icon="💬" Title="@(OtherUserId.HasValue ? "You can only message your connections" : "Select a conversation")" Message="Choose someone on the left to start chatting. Messages are delivered instantly." />
+            }
+            else
+            {
+                <header class="chat-header">
+                    <a class="icon-btn back-btn" href="messages" aria-label="Back to conversations">←</a>
+                    <Avatar Name="@_selected.OtherUserName" Online="Realtime.IsOnline(_selected.OtherUserId)" />
+                    <div>
+                        <strong>@_selected.OtherUserName</strong>
+                        <span class="muted small block">@(Realtime.IsOnline(_selected.OtherUserId) ? "🟢 Online now" : "Offline")</span>
+                    </div>
+                    <button class="btn btn-ghost btn-sm push-right" disabled="@(_messages.Count == 0)" @onclick="() => _confirmDelete = true">🗑 Clear chat</button>
+                </header>
+
+                <div class="chat-messages" @ref="_messagesElement">
+                    @if (_messages.Count == 0)
+                    {
+                        <p class="muted small center">No messages yet, say hello! 👋</p>
+                    }
+                    @foreach (IGrouping<DateTime, DirectMessage> day in MessagesByDay)
+                    {
+                        <div class="day-divider"><span>@DayLabel(day.Key)</span></div>
+                        foreach (DirectMessage message in day)
+                        {
+                            bool mine = message.SenderId == UserId;
+                            <div class="@(mine ? "bubble-row mine" : "bubble-row")">
+                                <div class="bubble">
+                                    <span class="bubble-text">@message.Text</span>
+                                    <span class="bubble-time">
+                                        @message.CreatedAtUtc.ToChatTime()
+                                        @if (mine)
+                                        {
+                                            <span title="@(message.IsRead ? "Seen" : "Delivered")">@(message.IsRead ? " ✓✓" : " ✓")</span>
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+
+                if (_selected.IsConnected)
+                {
+                    <form class="chat-input" @onsubmit="SendAsync" @onsubmit:preventDefault="true">
+                        <input class="input" placeholder="Type a message… (Enter to send)" maxlength="2000" autocomplete="off" @bind="_draft" @bind:event="oninput" />
+                        <button type="submit" class="btn btn-primary" disabled="@(string.IsNullOrWhiteSpace(_draft) || _sending)">Send</button>
+                    </form>
+                }
+                else
+                {
+                    <div class="alert alert-warning">You are no longer connected with @_selected.OtherUserName, so you can't send new messages.</div>
+                }
+            }
+        </section>
+    </div>
+</div>
+
+@if (_contextMenu is not null)
+{
+    <div class="click-catcher" @onclick="CloseContextMenu"></div>
+    <div class="context-menu" style="@MenuPosition" role="menu">
+        <div class="dropdown-header"><strong>@_contextMenu.OtherUserName</strong></div>
+        <button class="menu-item" @onclick="OpenFromMenu">💬 Open chat</button>
+        <button class="menu-item" disabled="@(_contextMenu.UnreadCount == 0)" @onclick="MarkReadFromMenu">✓ Mark as read</button>
+        <button class="menu-item danger" disabled="@(_contextMenu.LastMessage is null)" @onclick="DeleteFromMenu">🗑 Delete conversation</button>
+    </div>
+}
+
+<ConfirmDialog IsOpen="_confirmDelete"
+               Title="Delete conversation?"
+               Message="All messages with this student will be deleted for both of you."
+               ConfirmText="Delete"
+               OnConfirm="DeleteConversationAsync"
+               OnCancel="() => _confirmDelete = false" />
+
+@code {
+    [Parameter]
+    public int? OtherUserId { get; set; }
+
+    private bool _loading = true;
+    private IReadOnlyList<ConversationSummary> _conversations = Array.Empty<ConversationSummary>();
+    private ConversationSummary? _selected;
+    private IReadOnlyList<DirectMessage> _messages = Array.Empty<DirectMessage>();
+    private string _draft = "";
+    private string _filter = "";
+    private bool _sending;
+    private bool _scrollToBottom;
+    private bool _confirmDelete;
+    private int? _pendingDeleteUserId;
+    private ConversationSummary? _contextMenu;
+    private int _menuX;
+    private int _menuY;
+    private ElementReference _messagesElement;
+
+    private IEnumerable<ConversationSummary> VisibleConversations =>
+        _conversations.Where(c => c.OtherUserName.ContainsIgnoreCase(_filter) || c.LastMessage.ContainsIgnoreCase(_filter));
+
+    /// <summary>Messages grouped by local calendar day for the "Today / Yesterday" dividers.</summary>
+    private IEnumerable<IGrouping<DateTime, DirectMessage>> MessagesByDay =>
+        _messages.GroupBy(m => DateTime.SpecifyKind(m.CreatedAtUtc, DateTimeKind.Utc).ToLocalTime().Date);
+
+    private string MenuPosition => $"left: {_menuX}px; top: {_menuY}px";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        SubscribeToRealtime(OnRealtimeEventAsync);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (UserId == 0 && !await EnsureUserAsync())
+        {
+            return;
+        }
+
+        _draft = "";
+        await LoadSafelyAsync(SelectConversationAsync);
+        _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_scrollToBottom)
+        {
+            _scrollToBottom = false;
+            try
+            {
+                await JS.InvokeVoidAsync("studyConnect.scrollToBottom", _messagesElement);
+            }
+            catch (JSException)
+            {
+                // Cosmetic only.
+            }
+        }
+    }
+
+    private async Task SelectConversationAsync()
+    {
+        _conversations = await MessageService.GetConversationsAsync(UserId);
+        _selected = OtherUserId is int other ? _conversations.FirstOrDefault(c => c.OtherUserId == other) : null;
+
+        if (_selected is not null)
+        {
+            await LoadMessagesAsync();
+            if (_selected.UnreadCount > 0)
+            {
+                await MessageService.MarkConversationReadAsync(UserId, _selected.OtherUserId);
+                _conversations = await MessageService.GetConversationsAsync(UserId);
+            }
+        }
+        else
+        {
+            _messages = Array.Empty<DirectMessage>();
+        }
+    }
+
+    private async Task LoadMessagesAsync()
+    {
+        if (_selected is null)
+        {
+            return;
+        }
+
+        _messages = await MessageService.GetConversationAsync(UserId, _selected.OtherUserId);
+        _scrollToBottom = true;
+    }
+
+    private async Task OnRealtimeEventAsync(RealtimeEvent realtimeEvent)
+    {
+        switch (realtimeEvent.Type)
+        {
+            case RealtimeEventType.DirectMessage:
+                if (_selected is not null && realtimeEvent.FromUserId == _selected.OtherUserId)
+                {
+                    // A message arrived in the open conversation: show it and mark it as read immediately.
+                    await LoadMessagesAsync();
+                    await MessageService.MarkConversationReadAsync(UserId, _selected.OtherUserId);
+                }
+                else if (_selected is not null && realtimeEvent.FromUserId == UserId)
+                {
+                    await LoadMessagesAsync();
+                }
+
+                _conversations = await MessageService.GetConversationsAsync(UserId);
+                break;
+
+            case RealtimeEventType.MessagesRead:
+                await LoadMessagesAsync();
+                _conversations = await MessageService.GetConversationsAsync(UserId);
+                break;
+
+            case RealtimeEventType.ConnectionChanged:
+                await SelectConversationAsync();
+                break;
+        }
+    }
+
+    private async Task SendAsync()
+    {
+        if (_selected is null || _sending || string.IsNullOrWhiteSpace(_draft))
+        {
+            return;
+        }
+
+        _sending = true;
+        string text = _draft;
+        _draft = "";
+
+        int recipientId = _selected.OtherUserId;
+        DirectMessage? sent = await RunAsync(() => MessageService.SendAsync(UserId, recipientId, text));
+        if (sent is null)
+        {
+            _draft = text; // keep the text so nothing is lost
+        }
+
+        _sending = false;
+    }
+
+    private void OpenContextMenu(MouseEventArgs e, ConversationSummary conversation)
+    {
+        _contextMenu = conversation;
+        _menuX = (int)e.ClientX;
+        _menuY = (int)e.ClientY;
+    }
+
+    private void CloseContextMenu() => _contextMenu = null;
+
+    private void OpenFromMenu()
+    {
+        ConversationSummary? conversation = _contextMenu;
+        _contextMenu = null;
+        if (conversation is not null)
+        {
+            Navigation.NavigateTo($"messages/{conversation.OtherUserId}");
+        }
+    }
+
+    private async Task MarkReadFromMenu()
+    {
+        ConversationSummary? conversation = _contextMenu;
+        _contextMenu = null;
+        if (conversation is not null)
+        {
+            await LoadSafelyAsync(async () =>
+            {
+                await MessageService.MarkConversationReadAsync(UserId, conversation.OtherUserId);
+                _conversations = await MessageService.GetConversationsAsync(UserId);
+            });
+        }
+    }
+
+    private void DeleteFromMenu()
+    {
+        _pendingDeleteUserId = _contextMenu?.OtherUserId;
+        _contextMenu = null;
+        _confirmDelete = true;
+    }
+
+    private async Task DeleteConversationAsync()
+    {
+        _confirmDelete = false;
+        int? otherUserId = _pendingDeleteUserId ?? _selected?.OtherUserId;
+        _pendingDeleteUserId = null;
+
+        if (otherUserId is int other && await RunAsync(() => MessageService.DeleteConversationAsync(UserId, other), "Conversation deleted"))
+        {
+            await LoadSafelyAsync(SelectConversationAsync);
+        }
+    }
+
+    private string ConversationClass(ConversationSummary conversation)
+    {
+        string css = "conversation-item";
+        if (conversation.OtherUserId == OtherUserId)
+        {
+            css += " active";
+        }
+
+        if (conversation.UnreadCount > 0)
+        {
+            css += " unread";
+        }
+
+        return css;
+    }
+
+    private static string PreviewText(ConversationSummary conversation)
+    {
+        if (conversation.LastMessage is null)
+        {
+            return "Say hello 👋";
+        }
+
+        string prefix = conversation.LastMessageFromMe ? "You: " : "";
+        return prefix + conversation.LastMessage.Truncate(42);
+    }
+
+    private static string DayLabel(DateTime day)
+    {
+        if (day == DateTime.Today)
+        {
+            return "Today";
+        }
+
+        return day == DateTime.Today.AddDays(-1) ? "Yesterday" : day.ToString("dddd d MMMM", CultureInfo.InvariantCulture);
+    }
+}

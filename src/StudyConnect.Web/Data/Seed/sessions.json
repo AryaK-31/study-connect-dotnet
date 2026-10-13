@@ -1,0 +1,84 @@
+[
+  {
+    "title": "AI Study Group",
+    "topic": "Machine Learning Basics",
+    "daysFromNow": 2,
+    "hour": 10,
+    "durationMinutes": 90,
+    "location": "Online (Teams)",
+    "mode": "Online",
+    "capacity": 8,
+    "creatorEmail": "alice@uts.edu.au",
+    "subjectCode": null,
+    "attendeeEmails": [
+      "bob@uts.edu.au",
+      "fatima@uts.edu.au"
+    ]
+  },
+  {
+    "title": "Blazor Components Workshop",
+    "topic": "Building reusable Blazor components",
+    "daysFromNow": 3,
+    "hour": 14,
+    "durationMinutes": 120,
+    "location": "Library Room 101",
+    "mode": "OnCampus",
+    "capacity": 10,
+    "creatorEmail": "wendy@uts.edu.au",
+    "subjectCode": "31927",
+    "attendeeEmails": [
+      "bob@uts.edu.au",
+      "diana@uts.edu.au",
+      "zack@uts.edu.au"
+    ]
+  },
+  {
+    "title": "EF Core & LINQ Revision",
+    "topic": "Entity Framework, LINQ and lambda expressions",
+    "daysFromNow": 4,
+    "hour": 16,
+    "durationMinutes": 60,
+    "location": "CB11.B1.403",
+    "mode": "Hybrid",
+    "capacity": 12,
+    "creatorEmail": "george@uts.edu.au",
+    "subjectCode": "31927",
+    "attendeeEmails": [
+      "rahul@uts.edu.au",
+      "priya@uts.edu.au"
+    ]
+  },
+  {
+    "title": "Data Science Discussion",
+    "topic": "Python for Data Analysis",
+    "daysFromNow": 6,
+    "hour": 16,
+    "durationMinutes": 90,
+    "location": "Online",
+    "mode": "Online",
+    "capacity": 6,
+    "creatorEmail": "hannah@uts.edu.au",
+    "subjectCode": null,
+    "attendeeEmails": [
+      "uma@uts.edu.au",
+      "maya@uts.edu.au"
+    ]
+  },
+  {
+    "title": "NUnit Testing Clinic",
+    "topic": "Writing meaningful unit tests",
+    "daysFromNow": 7,
+    "hour": 11,
+    "durationMinutes": 60,
+    "location": "CB11.B1.401",
+    "mode": "OnCampus",
+    "capacity": 4,
+    "creatorEmail": "rahul@uts.edu.au",
+    "subjectCode": "31927",
+    "attendeeEmails": [
+      "charlie@uts.edu.au",
+      "ethan@uts.edu.au",
+      "zack@uts.edu.au"
+    ]
+  }
+]

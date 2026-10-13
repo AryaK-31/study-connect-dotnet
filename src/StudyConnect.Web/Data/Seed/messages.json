@@ -1,0 +1,37 @@
+[
+  {
+    "from": "bob@uts.edu.au",
+    "to": "alice@uts.edu.au",
+    "text": "Hey Alice! Are you still looking for a group for the .NET assignment?",
+    "minutesAgo": 300,
+    "read": true
+  },
+  {
+    "from": "alice@uts.edu.au",
+    "to": "bob@uts.edu.au",
+    "text": "Yes! I'm in Lab 02 on Monday afternoons. Want to team up?",
+    "minutesAgo": 290,
+    "read": true
+  },
+  {
+    "from": "bob@uts.edu.au",
+    "to": "alice@uts.edu.au",
+    "text": "Same lab \ud83c\udf89 I can take the Blazor front-end. Let's check Team Finder for a third person.",
+    "minutesAgo": 280,
+    "read": true
+  },
+  {
+    "from": "diana@uts.edu.au",
+    "to": "alice@uts.edu.au",
+    "text": "Hi! Saw your profile on Team Finder - I'd love to do the UI/UX for your team.",
+    "minutesAgo": 35,
+    "read": false
+  },
+  {
+    "from": "priya@uts.edu.au",
+    "to": "alice@uts.edu.au",
+    "text": "Are you coming to the EF Core revision session on Thursday?",
+    "minutesAgo": 12,
+    "read": false
+  }
+]

@@ -1,0 +1,110 @@
+[
+  {
+    "code": "31927",
+    "name": "Applications Development with .NET",
+    "description": "Build GUI and web applications with C#, LINQ, Entity Framework and Blazor. Assignment 2 is a group project (2\u20133 students, all from the same lab).",
+    "minTeamSize": 2,
+    "maxTeamSize": 3,
+    "labs": [
+      {
+        "code": "Lab 01",
+        "day": "Monday",
+        "start": "09:00",
+        "end": "11:00",
+        "room": "CB11.B1.403",
+        "tutor": "Dr. Priya Raman"
+      },
+      {
+        "code": "Lab 02",
+        "day": "Monday",
+        "start": "13:00",
+        "end": "15:00",
+        "room": "CB11.B1.403",
+        "tutor": "Mr. James Okafor"
+      },
+      {
+        "code": "Lab 03",
+        "day": "Wednesday",
+        "start": "10:00",
+        "end": "12:00",
+        "room": "CB11.B1.401",
+        "tutor": "Ms. Hannah Lee"
+      },
+      {
+        "code": "Lab 04",
+        "day": "Thursday",
+        "start": "15:00",
+        "end": "17:00",
+        "room": "CB11.B1.401",
+        "tutor": "Mr. Diego Alvarez"
+      }
+    ]
+  },
+  {
+    "code": "32998",
+    "name": ".NET Applications Development",
+    "description": "Postgraduate offering of the .NET applications subject. Group assignment of 2\u20133 students from the same lab.",
+    "minTeamSize": 2,
+    "maxTeamSize": 3,
+    "labs": [
+      {
+        "code": "Lab 01",
+        "day": "Tuesday",
+        "start": "18:00",
+        "end": "20:00",
+        "room": "CB02.04.120",
+        "tutor": "Dr. Wei Zhang"
+      },
+      {
+        "code": "Lab 02",
+        "day": "Friday",
+        "start": "09:00",
+        "end": "11:00",
+        "room": "CB02.04.120",
+        "tutor": "Ms. Olivia Brown"
+      }
+    ]
+  },
+  {
+    "code": "DEMO-ML",
+    "name": "Machine Learning Studio (sample)",
+    "description": "Sample subject included with the demo data. Project teams of 3\u20134.",
+    "minTeamSize": 3,
+    "maxTeamSize": 4,
+    "labs": [
+      {
+        "code": "Lab A",
+        "day": "Tuesday",
+        "start": "10:00",
+        "end": "12:00",
+        "room": "CB11.05.300",
+        "tutor": "Dr. Sam Patel"
+      },
+      {
+        "code": "Lab B",
+        "day": "Thursday",
+        "start": "10:00",
+        "end": "12:00",
+        "room": "CB11.05.300",
+        "tutor": "Dr. Sam Patel"
+      }
+    ]
+  },
+  {
+    "code": "DEMO-WEB",
+    "name": "Web Systems Studio (sample)",
+    "description": "Sample subject included with the demo data. Pairs or teams of three.",
+    "minTeamSize": 2,
+    "maxTeamSize": 3,
+    "labs": [
+      {
+        "code": "Lab A",
+        "day": "Wednesday",
+        "start": "14:00",
+        "end": "16:00",
+        "room": "CB11.04.210",
+        "tutor": "Ms. Grace Kim"
+      }
+    ]
+  }
+]

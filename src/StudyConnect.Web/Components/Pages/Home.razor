@@ -1,0 +1,276 @@
+@page "/"
+@inject IProfileService ProfileService
+@inject IMatchmakingService Matchmaking
+@inject IConnectionService ConnectionService
+@inject IStudySessionService SessionService
+@inject ITeamService TeamService
+@inject IMessageService MessageService
+
+<PageTitle>Dashboard · StudyConnect</PageTitle>
+
+@if (_loading)
+{
+    <div class="page-loading"><span class="spinner"></span> Loading your dashboard…</div>
+}
+else if (_user is not null)
+{
+    <div class="container">
+        <section class="hero-banner">
+            <div>
+                <p class="eyebrow">@Greeting</p>
+                <h1>Hi @_user.FirstName 👋</h1>
+                <p class="muted">Here's what's happening in your study network today.</p>
+            </div>
+            <div class="profile-progress">
+                <div class="row between small">
+                    <span>Profile completeness</span>
+                    <strong>@($"{_completeness}%")</strong>
+                </div>
+                <div class="progress"><div class="progress-bar" style="@($"width: {_completeness}%")"></div></div>
+                @if (_completeness < 100)
+                {
+                    <a class="small" href="@NextProfileStepLink">@NextProfileStepText →</a>
+                }
+            </div>
+        </section>
+
+        @if (!_user.ProfileCompleted)
+        {
+            <div class="alert alert-warning">
+                <strong>Finish setting up your profile.</strong>
+                Add your interests and when you're free so we can match you with other students.
+                <a href="profile">Set up profile →</a>
+            </div>
+        }
+
+        <section class="stat-grid">
+            <a class="stat" href="connections">
+                <span class="stat-icon">🤝</span>
+                <span class="stat-value">@_connectionCount</span>
+                <span class="stat-label">Connections</span>
+            </a>
+            <a class="stat" href="messages">
+                <span class="stat-icon">💬</span>
+                <span class="stat-value">@_unreadMessages</span>
+                <span class="stat-label">Unread messages</span>
+            </a>
+            <a class="stat" href="sessions">
+                <span class="stat-icon">📅</span>
+                <span class="stat-value">@_mySessions.Count</span>
+                <span class="stat-label">Sessions you're attending</span>
+            </a>
+            <a class="stat" href="teams">
+                <span class="stat-icon">👥</span>
+                <span class="stat-value">@_teams.Count</span>
+                <span class="stat-label">Assignment teams</span>
+            </a>
+        </section>
+
+        <div class="layout-main-side">
+            <section class="card">
+                <div class="card-header">
+                    <h2>✨ Students with similar interests</h2>
+                    <a class="small" href="team-finder">Find team mates in your lab →</a>
+                </div>
+
+                @if (_similar.Count == 0)
+                {
+                    <EmptyState Icon="🔍" Title="No matches yet" Message="Add a few interests to your profile and we'll find students who share them.">
+                        <a class="btn btn-primary btn-sm" href="profile">Add interests</a>
+                    </EmptyState>
+                }
+                else
+                {
+                    <div class="card-grid">
+                        @foreach (MatchResult match in _similar)
+                        {
+                            <StudentCard Profile="match.Candidate" Match="match" Online="Realtime.IsOnline(match.Candidate.UserId)">
+                                <Actions>
+                                    <ConnectButton OtherUserId="match.Candidate.UserId" Status="PeerOf(match.Candidate.UserId)" OnChanged="ReloadAsync" />
+                                </Actions>
+                            </StudentCard>
+                        }
+                    </div>
+                }
+            </section>
+
+            <aside class="stack">
+                <section class="card">
+                    <div class="card-header">
+                        <h2>🎓 My subjects</h2>
+                        <a class="small" href="subjects">Manage</a>
+                    </div>
+                    @if (_user.Enrollments.Count == 0)
+                    {
+                        <p class="muted small">You haven't enrolled in any subjects yet. Enrol to unlock Team Finder for your lab.</p>
+                        <a class="btn btn-primary btn-sm" href="subjects">Enrol in a subject</a>
+                    }
+                    else
+                    {
+                        <ul class="list">
+                            @foreach (Enrollment enrollment in _user.Enrollments.OrderBy(e => e.Subject.Code))
+                            {
+                                Team? team = _teams.FirstOrDefault(t => t.SubjectId == enrollment.SubjectId);
+                                <li class="list-item">
+                                    <div>
+                                        <strong>@enrollment.Subject.Code</strong>
+                                        <span class="muted small block">@enrollment.LabSlot.Display</span>
+                                    </div>
+                                    @if (team is not null)
+                                    {
+                                        <a class="badge badge-success" href="@($"teams/{team.Id}")">@team.Name</a>
+                                    }
+                                    else
+                                    {
+                                        <a class="btn btn-secondary btn-sm" href="@($"team-finder?subject={enrollment.SubjectId}")">Find a team</a>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+
+                <section class="card">
+                    <div class="card-header">
+                        <h2>📅 Upcoming sessions</h2>
+                        <a class="small" href="sessions">All sessions</a>
+                    </div>
+                    @if (_upcoming.Count == 0)
+                    {
+                        <p class="muted small">No upcoming sessions. Why not create one?</p>
+                    }
+                    else
+                    {
+                        <ul class="list">
+                            @foreach (StudySession session in _upcoming)
+                            {
+                                <li class="list-item">
+                                    <div>
+                                        <strong>@session.Title</strong>
+                                        <span class="muted small block">@session.StartsAt.ToSessionTime() · @session.Location</span>
+                                        <span class="muted small block">@session.Attendees.Count / @session.Capacity attending</span>
+                                    </div>
+                                    @if (session.IsAttending(UserId))
+                                    {
+                                        <span class="badge badge-success">Going</span>
+                                    }
+                                    else if (session.IsFull)
+                                    {
+                                        <span class="badge">Full</span>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="() => JoinSessionAsync(session.Id)">Join</button>
+                                    }
+                                </li>
+                            }
+                        </ul>
+                    }
+                </section>
+            </aside>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _loading = true;
+    private User? _user;
+    private IReadOnlyList<MatchResult> _similar = Array.Empty<MatchResult>();
+    private IReadOnlyDictionary<int, PeerStatus> _peers = new Dictionary<int, PeerStatus>();
+    private IReadOnlyList<StudySession> _upcoming = Array.Empty<StudySession>();
+    private IReadOnlyList<StudySession> _mySessions = Array.Empty<StudySession>();
+    private IReadOnlyList<Team> _teams = Array.Empty<Team>();
+    private int _connectionCount;
+    private int _unreadMessages;
+    private int _completeness;
+
+    private static string Greeting
+    {
+        get
+        {
+            int hour = DateTime.Now.Hour;
+            if (hour < 12)
+            {
+                return "Good morning";
+            }
+
+            return hour < 17 ? "Good afternoon" : "Good evening";
+        }
+    }
+
+    private string NextProfileStepLink => _user?.Enrollments.Count == 0 && _user.ProfileCompleted ? "subjects" : "profile";
+
+    private string NextProfileStepText => _user?.Enrollments.Count == 0 && _user.ProfileCompleted ? "Enrol in a subject" : "Complete your profile";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(LoadAsync);
+        _loading = false;
+
+        SubscribeToRealtime(async realtimeEvent =>
+        {
+            if (realtimeEvent.Type is RealtimeEventType.ConnectionChanged
+                or RealtimeEventType.DirectMessage
+                or RealtimeEventType.MessagesRead
+                or RealtimeEventType.TeamChanged
+                or RealtimeEventType.SessionChanged)
+            {
+                await LoadSafelyAsync(LoadAsync);
+            }
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        _user = await ProfileService.GetUserAsync(UserId);
+        if (_user is null)
+        {
+            Navigation.NavigateTo("account/login", forceLoad: true);
+            return;
+        }
+
+        _similar = await Matchmaking.GetSimilarStudentsAsync(UserId, take: 6);
+        _peers = await ConnectionService.GetPeerStatusesAsync(UserId);
+        _connectionCount = _peers.Values.Count(status => status == PeerStatus.Connected);
+        _unreadMessages = await MessageService.GetUnreadCountAsync(UserId);
+        _upcoming = (await SessionService.GetSessionsAsync(new SessionQuery())).Take(4).ToList();
+        _mySessions = await SessionService.GetSessionsAsync(new SessionQuery(AttendedByUserId: UserId));
+        _teams = await TeamService.GetTeamsForUserAsync(UserId);
+        _completeness = CalculateCompleteness(_user);
+    }
+
+    private Task ReloadAsync() => LoadSafelyAsync(LoadAsync);
+
+    private PeerStatus PeerOf(int otherUserId) =>
+        _peers.TryGetValue(otherUserId, out PeerStatus status) ? status : PeerStatus.None;
+
+    private async Task JoinSessionAsync(int sessionId)
+    {
+        if (await RunAsync(() => SessionService.JoinAsync(UserId, sessionId), "You're in! The organiser has been notified."))
+        {
+            await ReloadAsync();
+        }
+    }
+
+    /// <summary>Weighted checklist of profile fields (each lambda checks one field).</summary>
+    private static int CalculateCompleteness(User user)
+    {
+        var checks = new (Func<User, bool> IsDone, int Points)[]
+        {
+            (u => !string.IsNullOrWhiteSpace(u.Name), 15),
+            (u => u.Interests.Count >= 3, 20),
+            (u => u.Availability.Count >= 2, 20),
+            (u => !string.IsNullOrWhiteSpace(u.ContactNumber), 10),
+            (u => !string.IsNullOrWhiteSpace(u.Degree), 10),
+            (u => !string.IsNullOrWhiteSpace(u.Bio), 10),
+            (u => u.Enrollments.Count > 0, 15)
+        };
+
+        return checks.Where(check => check.IsDone(user)).Sum(check => check.Points);
+    }
+}

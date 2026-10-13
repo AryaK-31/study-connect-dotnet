@@ -1,0 +1,305 @@
+@page "/sessions"
+@inject IStudySessionService SessionService
+@inject ISubjectService SubjectService
+
+<PageTitle>Study sessions · StudyConnect</PageTitle>
+
+<div class="container">
+    <header class="page-header">
+        <div>
+            <h1>📅 Study sessions</h1>
+            <p class="muted">Create a session or join one, and the organiser is notified when you join.</p>
+        </div>
+        <button class="btn btn-primary" @onclick="OpenCreate">+ New session</button>
+    </header>
+
+    <section class="filter-bar card">
+        <div class="field inline grow">
+            <label class="label" for="search">Search</label>
+            <input id="search" class="input" type="search" placeholder="Title, topic or location…" @bind="_search" @bind:event="oninput" />
+        </div>
+        <div class="field inline">
+            <label class="label" for="subject">Subject</label>
+            <select id="subject" class="select" @bind="_subjectFilter" @bind:after="LoadAsync">
+                <option value="0">All subjects</option>
+                @foreach (Subject subject in _subjects)
+                {
+                    <option value="@subject.Id">@subject.Code</option>
+                }
+            </select>
+        </div>
+        <label class="checkbox">
+            <input type="checkbox" @bind="_onlyMine" @bind:after="LoadAsync" />
+            <span>Only sessions I'm attending</span>
+        </label>
+        <label class="checkbox">
+            <input type="checkbox" @bind="_includePast" @bind:after="LoadAsync" />
+            <span>Show past sessions</span>
+        </label>
+    </section>
+
+    @if (_loading)
+    {
+        <div class="page-loading"><span class="spinner"></span> Loading sessions…</div>
+    }
+    else if (VisibleSessions.Count == 0)
+    {
+        <EmptyState Icon="📅" Title="No sessions found" Message="Nothing matches your filters. Why not organise one?">
+            <button class="btn btn-primary" @onclick="OpenCreate">Create a session</button>
+        </EmptyState>
+    }
+    else
+    {
+        <div class="card-grid">
+            @foreach (StudySession session in VisibleSessions)
+            {
+                bool attending = session.IsAttending(UserId);
+                bool isCreator = session.CreatorId == UserId;
+
+                <article class="@(session.HasEnded ? "card session-card past" : "card session-card")">
+                    <div class="session-date">
+                        <span class="session-day">@session.StartsAt.ToString("dd", CultureInfo.InvariantCulture)</span>
+                        <span class="session-month">@session.StartsAt.ToString("MMM", CultureInfo.InvariantCulture)</span>
+                    </div>
+                    <div class="session-body">
+                        <div class="row between">
+                            <h3>@session.Title</h3>
+                            <span class="@ModeClass(session.Mode)">@session.Mode.ToDisplayName()</span>
+                        </div>
+                        <p class="muted small">@session.Topic</p>
+                        <p class="small">🕒 @session.StartsAt.ToSessionTime() · @session.DurationMinutes min</p>
+                        <p class="small">📍 @session.Location</p>
+                        @if (session.Subject is not null)
+                        {
+                            <span class="tag">🎓 @session.Subject.Code</span>
+                        }
+                        <p class="small muted">Organised by @(isCreator ? "you" : session.Creator.Name)</p>
+
+                        <div class="capacity">
+                            <div class="progress"><div class="progress-bar" style="@CapacityStyle(session)"></div></div>
+                            <span class="small muted">@session.Attendees.Count / @session.Capacity spots taken</span>
+                        </div>
+
+                        <div class="avatar-stack">
+                            @foreach (SessionAttendee attendee in session.Attendees.Take(6))
+                            {
+                                <Avatar Name="@attendee.User.Name" Size="sm" Online="Realtime.IsOnline(attendee.UserId)" />
+                            }
+                            @if (session.Attendees.Count > 6)
+                            {
+                                <span class="small muted">+@(session.Attendees.Count - 6) more</span>
+                            }
+                        </div>
+
+                        <div class="card-actions">
+                            @if (isCreator)
+                            {
+                                <button class="btn btn-danger btn-sm" disabled="@IsBusy" @onclick="() => _sessionToDelete = session">Delete</button>
+                            }
+                            else if (attending)
+                            {
+                                <span class="badge badge-success">✓ Going</span>
+                                <button class="btn btn-ghost btn-sm" disabled="@IsBusy" @onclick="() => LeaveAsync(session)">Leave</button>
+                            }
+                            else if (session.IsFull)
+                            {
+                                <span class="badge">Full</span>
+                            }
+                            else if (!session.HasEnded)
+                            {
+                                <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="() => JoinAsync(session)">Join session</button>
+                            }
+                        </div>
+                    </div>
+                </article>
+            }
+        </div>
+    }
+</div>
+
+<Modal IsOpen="_creating" Title="New study session" OnClose="() => _creating = false">
+    <ChildContent>
+        <EditForm id="session-form" Model="_form" OnValidSubmit="CreateAsync" class="form">
+            <DataAnnotationsValidator />
+            <div class="field">
+                <label class="label" for="title">Title</label>
+                <InputText id="title" class="input" placeholder="e.g. EF Core revision" @bind-Value="_form.Title" />
+                <ValidationMessage For="() => _form.Title" />
+            </div>
+            <div class="field">
+                <label class="label" for="topic">Topic</label>
+                <InputText id="topic" class="input" placeholder="What will you cover?" @bind-Value="_form.Topic" />
+                <ValidationMessage For="() => _form.Topic" />
+            </div>
+            <div class="form-row">
+                <div class="field">
+                    <label class="label" for="start">Starts</label>
+                    <InputDate id="start" class="input" Type="InputDateType.DateTimeLocal" @bind-Value="_form.StartsAt" />
+                    <ValidationMessage For="() => _form.StartsAt" />
+                </div>
+                <div class="field">
+                    <label class="label" for="duration">Duration <strong>@_form.DurationMinutes min</strong></label>
+                    <InputNumber id="duration" class="input" min="15" max="480" step="15" @bind-Value="_form.DurationMinutes" />
+                    <ValidationMessage For="() => _form.DurationMinutes" />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="field">
+                    <label class="label" for="mode">Format</label>
+                    <InputSelect id="mode" class="select" @bind-Value="_form.Mode">
+                        @foreach (SessionMode mode in Enum.GetValues<SessionMode>())
+                        {
+                            <option value="@mode">@mode.ToDisplayName()</option>
+                        }
+                    </InputSelect>
+                </div>
+                <div class="field">
+                    <label class="label" for="capacity">Capacity: <strong>@_form.Capacity</strong></label>
+                    <input id="capacity" class="range" type="range" min="2" max="30" @bind="_form.Capacity" @bind:event="oninput" />
+                </div>
+            </div>
+            <div class="field">
+                <label class="label" for="location">Location / link</label>
+                <InputText id="location" class="input" placeholder="Room number or online meeting link" @bind-Value="_form.Location" />
+                <ValidationMessage For="() => _form.Location" />
+            </div>
+            <div class="field">
+                <label class="label" for="formsubject">Subject <span class="muted small">(optional)</span></label>
+                <InputSelect id="formsubject" class="select" @bind-Value="_form.SubjectId">
+                    <option value="0">Not subject-specific</option>
+                    @foreach (Subject subject in _subjects)
+                    {
+                        <option value="@subject.Id">@subject.DisplayName</option>
+                    }
+                </InputSelect>
+            </div>
+        </EditForm>
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-ghost" @onclick="() => _creating = false">Cancel</button>
+        <button type="submit" form="session-form" class="btn btn-primary" disabled="@IsBusy">Create session</button>
+    </Footer>
+</Modal>
+
+<ConfirmDialog IsOpen="_sessionToDelete is not null"
+               Title="Delete session?"
+               Message="@($"“{_sessionToDelete?.Title}” will be cancelled and all attendees notified.")"
+               ConfirmText="Delete session"
+               OnConfirm="DeleteAsync"
+               OnCancel="() => _sessionToDelete = null" />
+
+@code {
+    private bool _loading = true;
+    private IReadOnlyList<StudySession> _sessions = Array.Empty<StudySession>();
+    private IReadOnlyList<Subject> _subjects = Array.Empty<Subject>();
+    private string _search = "";
+    private int _subjectFilter;
+    private bool _onlyMine;
+    private bool _includePast;
+    private bool _creating;
+    private StudySession? _sessionToDelete;
+    private SessionFormModel _form = new();
+
+    /// <summary>Text search is applied in memory so results update while typing.</summary>
+    private List<StudySession> VisibleSessions =>
+        _sessions.Where(s => string.IsNullOrWhiteSpace(_search)
+                             || s.Title.ContainsIgnoreCase(_search)
+                             || s.Topic.ContainsIgnoreCase(_search)
+                             || s.Location.ContainsIgnoreCase(_search))
+                 .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(async () => _subjects = await SubjectService.GetSubjectsAsync());
+        await LoadAsync();
+        _loading = false;
+
+        SubscribeToRealtime(async realtimeEvent =>
+        {
+            if (realtimeEvent.Type == RealtimeEventType.SessionChanged)
+            {
+                await LoadAsync();
+            }
+        });
+    }
+
+    private async Task LoadAsync()
+    {
+        await LoadSafelyAsync(async () =>
+        {
+            var query = new SessionQuery(
+                SubjectId: _subjectFilter == 0 ? null : _subjectFilter,
+                AttendedByUserId: _onlyMine ? UserId : null,
+                IncludePast: _includePast);
+
+            _sessions = await SessionService.GetSessionsAsync(query);
+        });
+    }
+
+    private void OpenCreate()
+    {
+        _form = new SessionFormModel();
+        _creating = true;
+    }
+
+    private async Task CreateAsync()
+    {
+        var request = new SessionCreateRequest(
+            _form.Title,
+            _form.Topic,
+            _form.StartsAt,
+            _form.DurationMinutes,
+            _form.Location,
+            _form.Mode,
+            _form.Capacity,
+            _form.SubjectId == 0 ? null : _form.SubjectId);
+
+        StudySession? created = await RunAsync(() => SessionService.CreateAsync(UserId, request), "Session created 🎉");
+        if (created is not null)
+        {
+            _creating = false;
+            await LoadAsync();
+        }
+    }
+
+    private async Task JoinAsync(StudySession session)
+    {
+        if (await RunAsync(() => SessionService.JoinAsync(UserId, session.Id), $"You joined \"{session.Title}\""))
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task LeaveAsync(StudySession session)
+    {
+        if (await RunAsync(() => SessionService.LeaveAsync(UserId, session.Id), "You left the session"))
+        {
+            await LoadAsync();
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        StudySession? session = _sessionToDelete;
+        _sessionToDelete = null;
+        if (session is not null && await RunAsync(() => SessionService.DeleteAsync(UserId, session.Id), "Session deleted"))
+        {
+            await LoadAsync();
+        }
+    }
+
+    private static string ModeClass(SessionMode mode) => mode switch
+    {
+        SessionMode.Online => "badge badge-info",
+        SessionMode.Hybrid => "badge badge-warning",
+        _ => "badge badge-success"
+    };
+
+    private static string CapacityStyle(StudySession session) =>
+        "width: " + (100.0 * session.Attendees.Count / Math.Max(1, session.Capacity)).ToString("0", CultureInfo.InvariantCulture) + "%";
+}

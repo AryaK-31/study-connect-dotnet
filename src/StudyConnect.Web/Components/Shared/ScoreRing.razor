@@ -1,0 +1,29 @@
+@* Circular progress ring that visualises a 0-100 compatibility score. *@
+<div class="@CssClass" title="@TitleText">
+    <svg viewBox="0 0 36 36" width="@Size" height="@Size" aria-hidden="true">
+        <circle class="ring-bg" cx="18" cy="18" r="15.915" fill="none" stroke-width="3.4" />
+        <circle class="ring-fg" cx="18" cy="18" r="15.915" fill="none" stroke-width="3.4"
+                stroke-dasharray="@DashArray" stroke-linecap="round" transform="rotate(-90 18 18)" />
+    </svg>
+    <span class="ring-value">@RoundedScore</span>
+</div>
+
+@code {
+    [Parameter]
+    public double Score { get; set; }
+
+    [Parameter]
+    public MatchQuality Quality { get; set; }
+
+    [Parameter]
+    public int Size { get; set; } = 58;
+
+    private string CssClass => $"score-ring quality-{Quality.ToString().ToLowerInvariant()}";
+
+    private string RoundedScore => Math.Round(Score).ToString("0", CultureInfo.InvariantCulture) + "%";
+
+    private string TitleText => $"{Quality} match · {RoundedScore}";
+
+    // The circle's circumference is ~100, so the score maps directly onto the dash length.
+    private string DashArray => Math.Clamp(Score, 0, 100).ToString("0.#", CultureInfo.InvariantCulture) + " 100";
+}

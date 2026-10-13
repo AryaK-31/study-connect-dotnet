@@ -1,0 +1,42 @@
+[
+  {
+    "from": "alice@uts.edu.au",
+    "to": "bob@uts.edu.au",
+    "status": "Accepted"
+  },
+  {
+    "from": "diana@uts.edu.au",
+    "to": "alice@uts.edu.au",
+    "status": "Accepted"
+  },
+  {
+    "from": "priya@uts.edu.au",
+    "to": "alice@uts.edu.au",
+    "status": "Accepted"
+  },
+  {
+    "from": "charlie@uts.edu.au",
+    "to": "alice@uts.edu.au",
+    "status": "Pending"
+  },
+  {
+    "from": "wendy@uts.edu.au",
+    "to": "alice@uts.edu.au",
+    "status": "Pending"
+  },
+  {
+    "from": "alice@uts.edu.au",
+    "to": "ethan@uts.edu.au",
+    "status": "Pending"
+  },
+  {
+    "from": "bob@uts.edu.au",
+    "to": "diana@uts.edu.au",
+    "status": "Accepted"
+  },
+  {
+    "from": "george@uts.edu.au",
+    "to": "rahul@uts.edu.au",
+    "status": "Accepted"
+  }
+]

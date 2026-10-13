@@ -1,0 +1,92 @@
+@* Weekly availability grid (7 days x 3 time blocks).
+   Editable mode toggles slots; read-only "heat" mode shows how many people are free in each slot. *@
+<div class="availability-grid">
+    <div class="ag-corner"></div>
+    @foreach (TimeBlock block in WeeklyAvailability.OrderedBlocks)
+    {
+        <div class="ag-head" title="@block.ToDisplayName()">@block</div>
+    }
+
+    @foreach (DayOfWeek day in WeeklyAvailability.OrderedDays)
+    {
+        <div class="ag-day">@day.ToShortName()</div>
+        foreach (TimeBlock block in WeeklyAvailability.OrderedBlocks)
+        {
+            <button type="button"
+                    class="@SlotClass(day, block)"
+                    disabled="@ReadOnly"
+                    aria-pressed="@(IsOn(day, block) ? "true" : "false")"
+                    title="@SlotTitle(day, block)"
+                    @onclick="() => ToggleAsync(day, block)">
+                @SlotText(day, block)
+            </button>
+        }
+    }
+</div>
+
+@code {
+    [Parameter]
+    public WeeklyAvailability Value { get; set; } = new();
+
+    [Parameter]
+    public EventCallback<WeeklyAvailability> ValueChanged { get; set; }
+
+    [Parameter]
+    public bool ReadOnly { get; set; }
+
+    /// <summary>Optional: number of people free in each slot (heat-map mode).</summary>
+    [Parameter]
+    public IReadOnlyDictionary<AvailabilitySlot, int>? Heat { get; set; }
+
+    [Parameter]
+    public int HeatMax { get; set; } = 1;
+
+    private bool IsOn(DayOfWeek day, TimeBlock block) => Value[day, block];
+
+    private int HeatOf(DayOfWeek day, TimeBlock block) =>
+        Heat is not null && Heat.TryGetValue(new AvailabilitySlot(day, block), out int count) ? count : 0;
+
+    private string SlotClass(DayOfWeek day, TimeBlock block)
+    {
+        if (Heat is not null)
+        {
+            int count = HeatOf(day, block);
+            if (count == 0)
+            {
+                return "ag-slot heat-0";
+            }
+
+            return count >= HeatMax ? "ag-slot heat-full" : "ag-slot heat-some";
+        }
+
+        return IsOn(day, block) ? "ag-slot on" : "ag-slot";
+    }
+
+    private string SlotText(DayOfWeek day, TimeBlock block)
+    {
+        if (Heat is not null)
+        {
+            int count = HeatOf(day, block);
+            return count == 0 ? "" : count.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return IsOn(day, block) ? "✓" : "";
+    }
+
+    private string SlotTitle(DayOfWeek day, TimeBlock block)
+    {
+        string label = $"{day} · {block.ToDisplayName()}";
+        return Heat is null ? label : $"{label}: {HeatOf(day, block)} of {HeatMax} free";
+    }
+
+    private async Task ToggleAsync(DayOfWeek day, TimeBlock block)
+    {
+        if (ReadOnly)
+        {
+            return;
+        }
+
+        Value.Toggle(day, block);
+        await ValueChanged.InvokeAsync(Value);
+    }
+}

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <!--
+    Presentation layer: ASP.NET Core Blazor Web App (interactive server rendering).
+    Run this project (it is the solution's start-up project).
+  -->
+  <PropertyGroup>
+    <RootNamespace>StudyConnect.Web</RootNamespace>
+    <AssemblyName>StudyConnect.Web</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\StudyConnect.Infrastructure\StudyConnect.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Seed data (JSON files) is read from disk at start-up the first time the database is created. -->
+    <Content Update="Data\Seed\*.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

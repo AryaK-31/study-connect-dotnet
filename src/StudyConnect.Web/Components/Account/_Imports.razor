@@ -1,0 +1,8 @@
+@* Account pages are rendered with static server-side rendering (no SignalR circuit) because
+   signing in/out must write the authentication cookie on a normal HTTP response. *@
+@layout AccountLayout
+@attribute [ExcludeFromInteractiveRouting]
+@attribute [AllowAnonymous]
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using StudyConnect.Infrastructure.Data

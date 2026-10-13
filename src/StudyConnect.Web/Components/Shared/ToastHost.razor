@@ -1,0 +1,38 @@
+@implements IDisposable
+@inject ToastService Toasts
+
+<div class="toast-host" role="status" aria-live="polite">
+    @foreach (ToastMessage toast in Toasts.Snapshot())
+    {
+        <div @key="toast.Id" class="@ToastClass(toast.Level)">
+            <span class="toast-icon">@ToastIcon(toast.Level)</span>
+            <span class="toast-text">@toast.Text</span>
+            <button class="toast-close" aria-label="Dismiss" @onclick="() => Toasts.Dismiss(toast.Id)">✕</button>
+        </div>
+    }
+</div>
+
+@code {
+    protected override void OnInitialized() => Toasts.Changed += OnToastsChanged;
+
+    // The event may be raised from a background task, so marshal back onto the renderer.
+    private void OnToastsChanged() => _ = InvokeAsync(StateHasChanged);
+
+    private static string ToastClass(ToastLevel level) => level switch
+    {
+        ToastLevel.Success => "toast toast-success",
+        ToastLevel.Warning => "toast toast-warning",
+        ToastLevel.Error => "toast toast-error",
+        _ => "toast toast-info"
+    };
+
+    private static string ToastIcon(ToastLevel level) => level switch
+    {
+        ToastLevel.Success => "✓",
+        ToastLevel.Warning => "!",
+        ToastLevel.Error => "⚠",
+        _ => "ℹ"
+    };
+
+    public void Dispose() => Toasts.Changed -= OnToastsChanged;
+}

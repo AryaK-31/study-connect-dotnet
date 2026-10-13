@@ -1,0 +1,27 @@
+@page "/error"
+@attribute [AllowAnonymous]
+@attribute [ExcludeFromInteractiveRouting]
+@layout StudyConnect.Web.Components.Layout.AccountLayout
+@using System.Diagnostics
+
+<PageTitle>Error · StudyConnect</PageTitle>
+
+<div class="auth-card">
+    <h1>Something went wrong</h1>
+    <p class="muted">An unexpected error occurred while processing your request. Please try again.</p>
+    @if (!string.IsNullOrEmpty(RequestId))
+    {
+        <p class="muted small">Request ID: <code>@RequestId</code></p>
+    }
+    <a class="btn btn-primary" href="/">Back to StudyConnect</a>
+</div>
+
+@code {
+    [CascadingParameter]
+    private HttpContext? HttpContext { get; set; }
+
+    private string? RequestId { get; set; }
+
+    protected override void OnInitialized() =>
+        RequestId = Activity.Current?.Id ?? HttpContext?.TraceIdentifier;
+}

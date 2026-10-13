@@ -1,0 +1,39 @@
+@* Confirmation modal used before destructive actions (delete session, leave team, delete account ...). *@
+<Modal IsOpen="IsOpen" Title="@Title" OnClose="CancelAsync">
+    <ChildContent>
+        <p>@Message</p>
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-ghost" @onclick="CancelAsync">Cancel</button>
+        <button class="@ConfirmClass" @onclick="ConfirmAsync">@ConfirmText</button>
+    </Footer>
+</Modal>
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "Are you sure?";
+
+    [Parameter]
+    public string Message { get; set; } = "";
+
+    [Parameter]
+    public string ConfirmText { get; set; } = "Confirm";
+
+    [Parameter]
+    public bool Danger { get; set; } = true;
+
+    [Parameter]
+    public EventCallback OnConfirm { get; set; }
+
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+
+    private string ConfirmClass => Danger ? "btn btn-danger" : "btn btn-primary";
+
+    private Task ConfirmAsync() => OnConfirm.InvokeAsync();
+
+    private Task CancelAsync() => OnCancel.InvokeAsync();
+}

@@ -1,0 +1,39 @@
+@* Reusable modal dialog. Content and footer are passed in as RenderFragments. *@
+@if (IsOpen)
+{
+    <div class="modal-backdrop" @onclick="CloseAsync"></div>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="@Title">
+        <div class="modal-header">
+            <h2>@Title</h2>
+            <button class="icon-btn" aria-label="Close" @onclick="CloseAsync">✕</button>
+        </div>
+        <div class="modal-body">
+            @ChildContent
+        </div>
+        @if (Footer is not null)
+        {
+            <div class="modal-footer">
+                @Footer
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsOpen { get; set; }
+
+    [Parameter]
+    public string Title { get; set; } = "";
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public RenderFragment? Footer { get; set; }
+
+    [Parameter]
+    public EventCallback OnClose { get; set; }
+
+    private Task CloseAsync() => OnClose.InvokeAsync();
+}

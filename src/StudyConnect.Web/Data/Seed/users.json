@@ -1,0 +1,576 @@
+[
+  {
+    "name": "Alice Johnson",
+    "email": "alice@uts.edu.au",
+    "contactNumber": "0453464097",
+    "degree": "Bachelor of Computing Science",
+    "bio": "Final-year CS student who loves turning data into products. Happy to own the back-end and the ML bits.",
+    "interests": [
+      "Machine Learning",
+      "Python",
+      "Data Science",
+      "C#",
+      ".NET"
+    ],
+    "availability": [
+      "Monday:Afternoon",
+      "Wednesday:Morning",
+      "Wednesday:Afternoon",
+      "Friday:Morning",
+      "Saturday:Afternoon"
+    ]
+  },
+  {
+    "name": "Bob Smith",
+    "email": "bob@uts.edu.au",
+    "contactNumber": "0430246633",
+    "degree": "Bachelor of Information Technology",
+    "bio": "Front-end tinkerer moving from React to Blazor. Reliable, organised, likes clean UI.",
+    "interests": [
+      "Web Development",
+      "React",
+      "JavaScript",
+      ".NET",
+      "Blazor"
+    ],
+    "availability": [
+      "Tuesday:Evening",
+      "Thursday:Afternoon",
+      "Wednesday:Morning",
+      "Saturday:Afternoon"
+    ]
+  },
+  {
+    "name": "Charlie Brown",
+    "email": "charlie@uts.edu.au",
+    "contactNumber": "0462992312",
+    "degree": "Bachelor of Information Technology",
+    "bio": "Security nerd. I will find the bugs in your login page before your tutor does.",
+    "interests": [
+      "Cyber Security",
+      "Networking",
+      "Linux"
+    ],
+    "availability": [
+      "Friday:Morning",
+      "Saturday:Afternoon",
+      "Tuesday:Evening"
+    ]
+  },
+  {
+    "name": "Diana Prince",
+    "email": "diana@uts.edu.au",
+    "contactNumber": "0497366946",
+    "degree": "Bachelor of Design in Interaction",
+    "bio": "Interaction designer who codes. I make things look good and feel easy.",
+    "interests": [
+      "UI/UX Design",
+      "Figma",
+      "Frontend",
+      "Blazor"
+    ],
+    "availability": [
+      "Monday:Morning",
+      "Thursday:Evening",
+      "Wednesday:Afternoon",
+      "Friday:Morning"
+    ]
+  },
+  {
+    "name": "Ethan Hunt",
+    "email": "ethan@uts.edu.au",
+    "contactNumber": "0416480894",
+    "degree": "Bachelor of Engineering (Software)",
+    "bio": "Mobile developer, keen to learn Blazor and EF Core this semester.",
+    "interests": [
+      "Mobile Apps",
+      "Flutter",
+      "Dart",
+      "C#"
+    ],
+    "availability": [
+      "Wednesday:Evening",
+      "Sunday:Afternoon",
+      "Monday:Afternoon"
+    ]
+  },
+  {
+    "name": "Fatima Rahman",
+    "email": "fatima@uts.edu.au",
+    "contactNumber": "0438816302",
+    "degree": "Bachelor of Computing Science",
+    "bio": "",
+    "interests": [
+      "Machine Learning",
+      "AI",
+      "Computer Vision",
+      "Python"
+    ],
+    "availability": [
+      "Friday:Morning",
+      "Monday:Evening",
+      "Wednesday:Evening"
+    ]
+  },
+  {
+    "name": "George Nguyen",
+    "email": "george@uts.edu.au",
+    "contactNumber": "0483960310",
+    "degree": "Bachelor of Information Technology",
+    "bio": "I enjoy databases and EF Core migrations more than I should.",
+    "interests": [
+      "C#",
+      ".NET",
+      "SQL",
+      "Blazor"
+    ],
+    "availability": [
+      "Monday:Afternoon",
+      "Thursday:Morning",
+      "Tuesday:Morning"
+    ]
+  },
+  {
+    "name": "Hannah Williams",
+    "email": "hannah@uts.edu.au",
+    "contactNumber": "0439673100",
+    "degree": "Bachelor of Science (Analytics)",
+    "bio": "",
+    "interests": [
+      "Data Science",
+      "SQL",
+      "Python",
+      "Machine Learning"
+    ],
+    "availability": [
+      "Friday:Evening",
+      "Friday:Morning",
+      "Monday:Evening",
+      "Monday:Morning",
+      "Saturday:Evening",
+      "Thursday:Morning"
+    ]
+  },
+  {
+    "name": "Isaac Chen",
+    "email": "isaac@uts.edu.au",
+    "contactNumber": "0425809806",
+    "degree": "Bachelor of Games Development",
+    "bio": "",
+    "interests": [
+      "Game Development",
+      "Unity",
+      "C#"
+    ],
+    "availability": [
+      "Friday:Morning",
+      "Tuesday:Evening",
+      "Wednesday:Afternoon"
+    ]
+  },
+  {
+    "name": "Jasmine Patel",
+    "email": "jasmine@uts.edu.au",
+    "contactNumber": "0485748230",
+    "degree": "Bachelor of Information Technology",
+    "bio": "",
+    "interests": [
+      "Web Development",
+      "JavaScript",
+      "UI/UX Design",
+      "React"
+    ],
+    "availability": [
+      "Friday:Evening",
+      "Monday:Evening",
+      "Saturday:Morning",
+      "Tuesday:Afternoon",
+      "Wednesday:Evening"
+    ]
+  },
+  {
+    "name": "Kai Tanaka",
+    "email": "kai@uts.edu.au",
+    "contactNumber": "0452164119",
+    "degree": "Bachelor of Engineering (Software)",
+    "bio": "",
+    "interests": [
+      "Cloud Computing",
+      "AWS",
+      "DevOps",
+      "Docker"
+    ],
+    "availability": [
+      "Friday:Afternoon",
+      "Friday:Morning",
+      "Thursday:Evening"
+    ]
+  },
+  {
+    "name": "Liam O'Connor",
+    "email": "liam@uts.edu.au",
+    "contactNumber": "0476453392",
+    "degree": "Bachelor of Cybersecurity",
+    "bio": "",
+    "interests": [
+      "Cyber Security",
+      "Linux",
+      "Python"
+    ],
+    "availability": [
+      "Friday:Afternoon",
+      "Monday:Evening",
+      "Saturday:Morning",
+      "Tuesday:Morning",
+      "Wednesday:Afternoon",
+      "Wednesday:Evening"
+    ]
+  },
+  {
+    "name": "Maya Singh",
+    "email": "maya@uts.edu.au",
+    "contactNumber": "0430399018",
+    "degree": "Bachelor of Computing Science",
+    "bio": "",
+    "interests": [
+      "AI",
+      "NLP",
+      "Python",
+      "Data Science"
+    ],
+    "availability": [
+      "Friday:Afternoon",
+      "Monday:Morning",
+      "Saturday:Afternoon",
+      "Tuesday:Afternoon",
+      "Wednesday:Evening"
+    ]
+  },
+  {
+    "name": "Noah Kim",
+    "email": "noah@uts.edu.au",
+    "contactNumber": "0487832216",
+    "degree": "Bachelor of Information Technology",
+    "bio": "Blazor + Azure enthusiast. Looking for a team aiming for HD.",
+    "interests": [
+      "C#",
+      ".NET",
+      "Blazor",
+      "SQL",
+      "Cloud Computing"
+    ],
+    "availability": [
+      "Friday:Afternoon",
+      "Friday:Evening",
+      "Saturday:Afternoon",
+      "Saturday:Morning",
+      "Thursday:Morning",
+      "Wednesday:Afternoon"
+    ]
+  },
+  {
+    "name": "Olivia Martin",
+    "email": "olivia@uts.edu.au",
+    "contactNumber": "0487570629",
+    "degree": "Bachelor of Design in Interaction",
+    "bio": "",
+    "interests": [
+      "UI/UX Design",
+      "Figma",
+      "Mobile Apps"
+    ],
+    "availability": [
+      "Monday:Morning",
+      "Saturday:Evening",
+      "Wednesday:Afternoon",
+      "Wednesday:Evening"
+    ]
+  },
+  {
+    "name": "Priya Sharma",
+    "email": "priya@uts.edu.au",
+    "contactNumber": "0417912728",
+    "degree": "Bachelor of Computing Science",
+    "bio": "ML + C# \u2014 keen to add a recommendation engine to our assignment.",
+    "interests": [
+      "Machine Learning",
+      "Data Science",
+      "SQL",
+      "C#"
+    ],
+    "availability": [
+      "Monday:Afternoon",
+      "Thursday:Afternoon",
+      "Thursday:Evening",
+      "Tuesday:Evening",
+      "Wednesday:Evening",
+      "Wednesday:Morning"
+    ]
+  },
+  {
+    "name": "Quinn Taylor",
+    "email": "quinn@uts.edu.au",
+    "contactNumber": "0432329304",
+    "degree": "Bachelor of Engineering (Software)",
+    "bio": "",
+    "interests": [
+      "DevOps",
+      "Docker",
+      "Cloud Computing",
+      "Linux"
+    ],
+    "availability": [
+      "Saturday:Morning",
+      "Thursday:Afternoon",
+      "Thursday:Morning",
+      "Wednesday:Morning"
+    ]
+  },
+  {
+    "name": "Rahul Verma",
+    "email": "rahul@uts.edu.au",
+    "contactNumber": "0440970943",
+    "degree": "Bachelor of Computing Science",
+    "bio": "",
+    "interests": [
+      "Algorithms",
+      "C#",
+      "Java",
+      ".NET"
+    ],
+    "availability": [
+      "Saturday:Afternoon",
+      "Thursday:Afternoon",
+      "Thursday:Evening",
+      "Wednesday:Evening",
+      "Wednesday:Morning"
+    ]
+  },
+  {
+    "name": "Sofia Rossi",
+    "email": "sofia@uts.edu.au",
+    "contactNumber": "0489070818",
+    "degree": "Bachelor of Information Technology",
+    "bio": "",
+    "interests": [
+      "Web Development",
+      "Frontend",
+      "React",
+      "UI/UX Design"
+    ],
+    "availability": [
+      "Monday:Afternoon",
+      "Monday:Morning",
+      "Saturday:Morning",
+      "Tuesday:Morning"
+    ]
+  },
+  {
+    "name": "Tom Wilson",
+    "email": "tom@uts.edu.au",
+    "contactNumber": "0486013032",
+    "degree": "Bachelor of Games Development",
+    "bio": "",
+    "interests": [
+      "Game Development",
+      "Unity",
+      "Computer Vision"
+    ],
+    "availability": [
+      "Monday:Morning",
+      "Thursday:Evening",
+      "Wednesday:Afternoon",
+      "Wednesday:Evening"
+    ]
+  },
+  {
+    "name": "Uma Desai",
+    "email": "uma@uts.edu.au",
+    "contactNumber": "0485064182",
+    "degree": "Bachelor of Science (Analytics)",
+    "bio": "",
+    "interests": [
+      "Data Science",
+      "Python",
+      "AI",
+      "Algorithms"
+    ],
+    "availability": [
+      "Friday:Evening",
+      "Saturday:Evening",
+      "Saturday:Morning",
+      "Thursday:Evening",
+      "Tuesday:Evening"
+    ]
+  },
+  {
+    "name": "Victor Lopez",
+    "email": "victor@uts.edu.au",
+    "contactNumber": "0431783965",
+    "degree": "Bachelor of Cybersecurity",
+    "bio": "",
+    "interests": [
+      "Networking",
+      "Cyber Security",
+      "Cloud Computing"
+    ],
+    "availability": [
+      "Thursday:Afternoon",
+      "Thursday:Evening",
+      "Thursday:Morning",
+      "Tuesday:Afternoon",
+      "Tuesday:Morning"
+    ]
+  },
+  {
+    "name": "Wendy Zhou",
+    "email": "wendy@uts.edu.au",
+    "contactNumber": "0430302435",
+    "degree": "Bachelor of Information Technology",
+    "bio": "UI developer, strong in Blazor components and CSS.",
+    "interests": [
+      "C#",
+      "Blazor",
+      ".NET",
+      "UI/UX Design"
+    ],
+    "availability": [
+      "Monday:Evening",
+      "Monday:Morning",
+      "Wednesday:Evening"
+    ]
+  },
+  {
+    "name": "Xavier Ali",
+    "email": "xavier@uts.edu.au",
+    "contactNumber": "0473639532",
+    "degree": "Bachelor of Engineering (Software)",
+    "bio": "",
+    "interests": [
+      "Mobile Apps",
+      "Flutter",
+      "Firebase",
+      "Dart"
+    ],
+    "availability": [
+      "Friday:Afternoon",
+      "Friday:Morning",
+      "Monday:Afternoon",
+      "Monday:Morning",
+      "Tuesday:Evening",
+      "Wednesday:Afternoon"
+    ]
+  },
+  {
+    "name": "Yasmin Haddad",
+    "email": "yasmin@uts.edu.au",
+    "contactNumber": "0421527244",
+    "degree": "Bachelor of Computing Science",
+    "bio": "",
+    "interests": [
+      "Machine Learning",
+      "Computer Vision",
+      "AI",
+      "C#"
+    ],
+    "availability": [
+      "Monday:Afternoon",
+      "Thursday:Afternoon"
+    ]
+  },
+  {
+    "name": "Zack Morgan",
+    "email": "zack@uts.edu.au",
+    "contactNumber": "0479301246",
+    "degree": "Bachelor of Information Technology",
+    "bio": "",
+    "interests": [
+      "Web Development",
+      "JavaScript",
+      ".NET",
+      "SQL"
+    ],
+    "availability": [
+      "Monday:Evening",
+      "Saturday:Morning",
+      "Wednesday:Afternoon",
+      "Wednesday:Evening"
+    ]
+  },
+  {
+    "name": "Amelia Clarke",
+    "email": "amelia@uts.edu.au",
+    "contactNumber": "0413629581",
+    "degree": "Master of Data Science and Innovation",
+    "bio": "",
+    "interests": [
+      "Data Science",
+      "Machine Learning",
+      "Python",
+      ".NET"
+    ],
+    "availability": [
+      "Saturday:Evening",
+      "Tuesday:Evening",
+      "Wednesday:Morning"
+    ]
+  },
+  {
+    "name": "Ben Carter",
+    "email": "ben@uts.edu.au",
+    "contactNumber": "0495421789",
+    "degree": "Master of Information Technology",
+    "bio": "",
+    "interests": [
+      "Algorithms",
+      "Java",
+      "Cloud Computing"
+    ],
+    "availability": [
+      "Friday:Afternoon",
+      "Friday:Evening",
+      "Monday:Evening",
+      "Wednesday:Evening",
+      "Wednesday:Morning"
+    ]
+  },
+  {
+    "name": "Chloe Dubois",
+    "email": "chloe@uts.edu.au",
+    "contactNumber": "0476140059",
+    "degree": "Master of Information Technology",
+    "bio": "",
+    "interests": [
+      "UI/UX Design",
+      "Frontend",
+      "Figma",
+      "Web Development"
+    ],
+    "availability": [
+      "Friday:Morning",
+      "Saturday:Morning",
+      "Tuesday:Afternoon",
+      "Tuesday:Evening"
+    ]
+  },
+  {
+    "name": "Daniel Park",
+    "email": "daniel@uts.edu.au",
+    "contactNumber": "0470025882",
+    "degree": "Master of Information Technology",
+    "bio": "",
+    "interests": [
+      "C#",
+      ".NET",
+      "SQL",
+      "DevOps"
+    ],
+    "availability": [
+      "Friday:Afternoon",
+      "Monday:Afternoon",
+      "Saturday:Morning",
+      "Thursday:Afternoon",
+      "Tuesday:Evening"
+    ]
+  }
+]

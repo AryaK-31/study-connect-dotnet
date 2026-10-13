@@ -1,0 +1,98 @@
+@* Card showing a student, their compatibility with the current user and the reasons behind it. *@
+<article class="student-card">
+    <div class="student-card-head">
+        <Avatar Name="@Profile.Name" Online="Online" />
+        <div class="student-meta">
+            <h3>@Profile.Name</h3>
+            <span class="muted small">@(Profile.Degree ?? Profile.Email)</span>
+            @if (ShowEnrollment)
+            {
+                <div class="tags">
+                    <span class="tag">🛠 @Profile.PreferredRole.ToDisplayName()</span>
+                    <span class="tag">📈 @Profile.Skill.ToDisplayName()</span>
+                    <span class="tag">🎯 @Profile.Goal.ToDisplayName()</span>
+                    @if (!string.IsNullOrEmpty(Profile.LabLabel))
+                    {
+                        <span class="tag">🧪 @Profile.LabLabel</span>
+                    }
+                </div>
+            }
+        </div>
+        @if (Match is not null)
+        {
+            <ScoreRing Score="Match.Score" Quality="Match.Quality" />
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Profile.Pitch))
+    {
+        <p class="pitch">@($"“{Profile.Pitch}”")</p>
+    }
+
+    @if (Profile.Interests.Count > 0)
+    {
+        <div class="chip-list">
+            @foreach (string interest in Profile.Interests.OrderBy(i => i).Take(6))
+            {
+                <span class="chip static">@interest.ToTitleCase()</span>
+            }
+        </div>
+    }
+
+    @if (Match is not null)
+    {
+        <ul class="reasons">
+            @foreach (string reason in Match.TopReasons())
+            {
+                <li>@reason</li>
+            }
+        </ul>
+
+        if (ShowBreakdown)
+        {
+            <details class="breakdown">
+                <summary>Why this score?</summary>
+                @foreach (CriterionScore criterion in Match.Breakdown)
+                {
+                    <div class="breakdown-row">
+                        <span class="breakdown-name">@criterion.Criterion</span>
+                        <div class="progress"><div class="progress-bar" style="@BarStyle(criterion.Score)"></div></div>
+                        <span class="small muted">@WeightText(criterion.Weight)</span>
+                    </div>
+                }
+            </details>
+        }
+    }
+
+    @if (Actions is not null)
+    {
+        <div class="card-actions">
+            @Actions
+        </div>
+    }
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public StudentProfile Profile { get; set; } = default!;
+
+    [Parameter]
+    public MatchResult? Match { get; set; }
+
+    [Parameter]
+    public bool Online { get; set; }
+
+    [Parameter]
+    public bool ShowEnrollment { get; set; }
+
+    [Parameter]
+    public bool ShowBreakdown { get; set; }
+
+    [Parameter]
+    public RenderFragment? Actions { get; set; }
+
+    private static string BarStyle(double score) =>
+        "width: " + (Math.Clamp(score, 0, 1) * 100).ToString("0", CultureInfo.InvariantCulture) + "%";
+
+    private static string WeightText(double weight) => "weight " + weight.ToString("0.#", CultureInfo.InvariantCulture);
+}

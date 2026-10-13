@@ -1,0 +1,22 @@
+<Router AppAssembly="typeof(Program).Assembly">
+    <Found Context="routeData">
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(MainLayout)">
+            <NotAuthorized>
+                <RedirectToLogin />
+            </NotAuthorized>
+            <Authorizing>
+                <div class="page-loading"><span class="spinner"></span> Checking your session…</div>
+            </Authorizing>
+        </AuthorizeRouteView>
+        <FocusOnNavigate RouteData="routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <LayoutView Layout="typeof(MainLayout)">
+            <div class="container narrow">
+                <EmptyState Icon="🧭" Title="Page not found" Message="The page you are looking for does not exist.">
+                    <a class="btn btn-primary" href="/">Back to dashboard</a>
+                </EmptyState>
+            </div>
+        </LayoutView>
+    </NotFound>
+</Router>

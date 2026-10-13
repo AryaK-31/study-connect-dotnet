@@ -1,0 +1,247 @@
+@page "/subjects"
+@inject ISubjectService SubjectService
+
+<PageTitle>My subjects · StudyConnect</PageTitle>
+
+<div class="container">
+    <header class="page-header">
+        <div>
+            <h1>Subjects &amp; labs</h1>
+            <p class="muted">Enrol in your subjects and choose the lab you attend. Team Finder only matches you with students from the <strong>same lab</strong>, because assignment groups must come from one lab.</p>
+        </div>
+    </header>
+
+    @if (Welcome)
+    {
+        <div class="alert alert-info">
+            <strong>Almost done!</strong> Enrol in at least one subject below, then open <a href="team-finder">Team Finder</a> to meet your future team mates.
+        </div>
+    }
+
+    @if (_loading)
+    {
+        <div class="page-loading"><span class="spinner"></span> Loading subjects…</div>
+    }
+    else
+    {
+        <div class="subject-grid">
+            @foreach (Subject subject in _subjects)
+            {
+                Enrollment? enrollment = EnrollmentFor(subject.Id);
+                <article class="@(enrollment is null ? "card subject-card" : "card subject-card enrolled")">
+                    <div class="card-header">
+                        <div>
+                            <span class="eyebrow">@subject.Code</span>
+                            <h2>@subject.Name</h2>
+                        </div>
+                        @if (enrollment is not null)
+                        {
+                            <span class="badge badge-success">Enrolled</span>
+                        }
+                    </div>
+                    <p class="muted small">@subject.Description</p>
+                    <p class="small">👥 Teams of <strong>@subject.MinTeamSize–@subject.MaxTeamSize</strong> students from the same lab</p>
+
+                    <table class="table">
+                        <thead>
+                            <tr><th>Lab</th><th>When</th><th>Room</th><th>Tutor</th></tr>
+                        </thead>
+                        <tbody>
+                            @foreach (LabSlot lab in subject.Labs)
+                            {
+                                <tr class="@(enrollment?.LabSlotId == lab.Id ? "highlight" : "")">
+                                    <td>@lab.Code</td>
+                                    <td>@lab.Day.ToShortName() @lab.StartTime.ToString("HH:mm", CultureInfo.InvariantCulture)–@lab.EndTime.ToString("HH:mm", CultureInfo.InvariantCulture)</td>
+                                    <td>@lab.Room</td>
+                                    <td>@lab.Tutor</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    @if (enrollment is not null)
+                    {
+                        <div class="enrollment-summary">
+                            <span class="tag">🧪 @enrollment.LabSlot.Code</span>
+                            <span class="tag">🛠 @enrollment.PreferredRole.ToDisplayName()</span>
+                            <span class="tag">📈 @enrollment.Skill.ToDisplayName()</span>
+                            <span class="tag">🎯 @enrollment.Goal.ToDisplayName()</span>
+                            <span class="@(enrollment.LookingForTeam ? "tag tag-green" : "tag")">@(enrollment.LookingForTeam ? "Looking for a team" : "Not looking")</span>
+                        </div>
+                        <div class="card-actions">
+                            <a class="btn btn-primary btn-sm" href="@($"team-finder?subject={subject.Id}")">🔍 Team Finder</a>
+                            <button class="btn btn-secondary btn-sm" @onclick="() => OpenEditor(subject)">Edit preferences</button>
+                            <button class="btn btn-ghost btn-sm" @onclick="() => _unenrollSubject = subject">Unenrol</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card-actions">
+                            <button class="btn btn-primary btn-sm" @onclick="() => OpenEditor(subject)">+ Enrol</button>
+                        </div>
+                    }
+                </article>
+            }
+        </div>
+    }
+</div>
+
+<Modal IsOpen="_editing is not null" Title="@EditorTitle" OnClose="CloseEditor">
+    <ChildContent>
+        @if (_editing is not null)
+        {
+            // Capture the subject in a local so child components that re-render on their own
+            // (e.g. InputSelect after validation) never see the field after it was reset to null.
+            Subject editing = _editing;
+            <EditForm id="enrollment-form" Model="_form" OnValidSubmit="SaveEnrollmentAsync" class="form">
+                <DataAnnotationsValidator />
+
+                <div class="field">
+                    <label class="label" for="lab">Which lab do you attend?</label>
+                    <InputSelect id="lab" class="select" @bind-Value="_form.LabSlotId">
+                        <option value="0">Choose your lab</option>
+                        @foreach (LabSlot lab in editing.Labs)
+                        {
+                            <option value="@lab.Id">@lab.Display (@lab.Room)</option>
+                        }
+                    </InputSelect>
+                    <ValidationMessage For="() => _form.LabSlotId" />
+                </div>
+
+                <div class="form-row">
+                    <div class="field">
+                        <label class="label" for="role">Preferred team role</label>
+                        <InputSelect id="role" class="select" @bind-Value="_form.PreferredRole">
+                            @foreach (TeamRole role in Enum.GetValues<TeamRole>())
+                            {
+                                <option value="@role">@role.ToDisplayName()</option>
+                            }
+                        </InputSelect>
+                    </div>
+                    <div class="field">
+                        <label class="label" for="goal">Target grade</label>
+                        <InputSelect id="goal" class="select" @bind-Value="_form.Goal">
+                            @foreach (TargetGrade goal in Enum.GetValues<TargetGrade>())
+                            {
+                                <option value="@goal">@goal.ToDisplayName()</option>
+                            }
+                        </InputSelect>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <span class="label">How confident are you with this subject?</span>
+                    <InputRadioGroup @bind-Value="_form.Skill">
+                        <div class="segmented">
+                            @foreach (SkillLevel level in Enum.GetValues<SkillLevel>())
+                            {
+                                <label class="segment">
+                                    <InputRadio Value="level" />
+                                    <span>@level.ToDisplayName()</span>
+                                </label>
+                            }
+                        </div>
+                    </InputRadioGroup>
+                </div>
+
+                <label class="switch">
+                    <InputCheckbox @bind-Value="_form.LookingForTeam" />
+                    <span class="switch-track"></span>
+                    <span>I'm looking for an assignment team</span>
+                </label>
+
+                <div class="field">
+                    <label class="label" for="pitch">Your pitch to potential team mates <span class="muted small">(optional)</span></label>
+                    <InputTextArea id="pitch" class="textarea" rows="3" placeholder="e.g. Keen on an ML feature, happy to own the back-end and EF Core." @bind-Value="_form.Pitch" />
+                    <ValidationMessage For="() => _form.Pitch" />
+                </div>
+            </EditForm>
+        }
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-ghost" @onclick="CloseEditor">Cancel</button>
+        <button type="submit" form="enrollment-form" class="btn btn-primary" disabled="@IsBusy">Save</button>
+    </Footer>
+</Modal>
+
+<ConfirmDialog IsOpen="_unenrollSubject is not null"
+               Title="Unenrol from subject?"
+               Message="@($"You will no longer appear in Team Finder for {_unenrollSubject?.Code}. Pending invitations will be withdrawn.")"
+               ConfirmText="Unenrol"
+               OnConfirm="UnenrollAsync"
+               OnCancel="() => _unenrollSubject = null" />
+
+@code {
+    [SupplyParameterFromQuery]
+    public bool Welcome { get; set; }
+
+    private bool _loading = true;
+    private IReadOnlyList<Subject> _subjects = Array.Empty<Subject>();
+    private IReadOnlyList<Enrollment> _enrollments = Array.Empty<Enrollment>();
+    private Subject? _editing;
+    private Subject? _unenrollSubject;
+    private EnrollmentFormModel _form = new();
+
+    private string EditorTitle => _editing is null ? "" : $"{_editing.Code} – {_editing.Name}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(LoadAsync);
+        _loading = false;
+    }
+
+    private async Task LoadAsync()
+    {
+        _subjects = await SubjectService.GetSubjectsAsync();
+        _enrollments = await SubjectService.GetEnrollmentsAsync(UserId);
+    }
+
+    private Enrollment? EnrollmentFor(int subjectId) => _enrollments.FirstOrDefault(e => e.SubjectId == subjectId);
+
+    private void OpenEditor(Subject subject)
+    {
+        Enrollment? existing = EnrollmentFor(subject.Id);
+        _form = existing is null
+            ? new EnrollmentFormModel { SubjectId = subject.Id }
+            : new EnrollmentFormModel
+            {
+                SubjectId = subject.Id,
+                LabSlotId = existing.LabSlotId,
+                PreferredRole = existing.PreferredRole,
+                Skill = existing.Skill,
+                Goal = existing.Goal,
+                LookingForTeam = existing.LookingForTeam,
+                Pitch = existing.Pitch
+            };
+
+        _editing = subject;
+    }
+
+    private void CloseEditor() => _editing = null;
+
+    private async Task SaveEnrollmentAsync()
+    {
+        var request = new EnrollmentRequest(_form.SubjectId, _form.LabSlotId, _form.PreferredRole, _form.Skill, _form.Goal, _form.LookingForTeam, _form.Pitch);
+        Enrollment? saved = await RunAsync(() => SubjectService.SaveEnrollmentAsync(UserId, request), "Enrolment saved");
+        if (saved is not null)
+        {
+            _editing = null;
+            await LoadSafelyAsync(LoadAsync);
+        }
+    }
+
+    private async Task UnenrollAsync()
+    {
+        Subject? subject = _unenrollSubject;
+        _unenrollSubject = null;
+        if (subject is not null && await RunAsync(() => SubjectService.UnenrollAsync(UserId, subject.Id), $"Unenrolled from {subject.Code}"))
+        {
+            await LoadSafelyAsync(LoadAsync);
+        }
+    }
+}

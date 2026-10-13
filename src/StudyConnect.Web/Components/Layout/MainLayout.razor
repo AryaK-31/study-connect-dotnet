@@ -1,0 +1,45 @@
+@inherits LayoutComponentBase
+
+<div class="app-shell">
+    <AuthorizeView>
+        <Authorized>
+            <NavBar />
+        </Authorized>
+    </AuthorizeView>
+
+    <main class="app-main">
+        @* Error boundary: a crash inside one page shows a friendly message instead of breaking the app. *@
+        <ErrorBoundary @ref="_errorBoundary">
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent>
+                <div class="container narrow">
+                    <div class="alert alert-error">
+                        <strong>Oops! Something went wrong on this page.</strong>
+                        <p>The error has been logged. You can try again or go back to the dashboard.</p>
+                        <div class="row gap">
+                            <button class="btn btn-secondary btn-sm" @onclick="Recover">Try again</button>
+                            <a class="btn btn-ghost btn-sm" href="/">Dashboard</a>
+                        </div>
+                    </div>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
+    </main>
+
+    <footer class="app-footer">
+        <span>StudyConnect · built with ASP.NET Core Blazor, EF Core &amp; C#</span>
+    </footer>
+
+    <ToastHost />
+</div>
+
+@code {
+    private ErrorBoundary? _errorBoundary;
+
+    // Reset the error boundary whenever the user navigates to another page.
+    protected override void OnParametersSet() => _errorBoundary?.Recover();
+
+    private void Recover() => _errorBoundary?.Recover();
+}

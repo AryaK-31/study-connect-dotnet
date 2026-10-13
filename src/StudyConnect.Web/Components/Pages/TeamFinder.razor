@@ -1,0 +1,487 @@
+@page "/team-finder"
+@inject IMatchmakingService Matchmaking
+@inject ISubjectService SubjectService
+@inject ITeamService TeamService
+@inject IProfileService ProfileService
+
+<PageTitle>Team Finder · StudyConnect</PageTitle>
+
+<div class="container">
+    <header class="page-header">
+        <div>
+            <h1>🔍 Team Finder</h1>
+            <p class="muted">Available students from <strong>your subject and your lab</strong>, ranked by how well you'd work together.</p>
+        </div>
+        @if (_enrollments.Count > 0)
+        {
+            <div class="field inline">
+                <label class="label" for="subject">Subject</label>
+                <select id="subject" class="select" @bind="SelectedSubjectId" @bind:after="LoadResultAsync">
+                    @foreach (Enrollment enrollment in _enrollments)
+                    {
+                        <option value="@enrollment.SubjectId">@enrollment.Subject.Code – @enrollment.Subject.Name</option>
+                    }
+                </select>
+            </div>
+        }
+    </header>
+
+    @if (_loading)
+    {
+        <div class="page-loading"><span class="spinner"></span> Finding your best matches…</div>
+    }
+    else if (_enrollments.Count == 0)
+    {
+        <EmptyState Icon="🎓" Title="Enrol in a subject first" Message="Tell us which subjects you take and which lab you attend, and we'll show you available team mates from that lab.">
+            <a class="btn btn-primary" href="subjects">Choose my subjects</a>
+        </EmptyState>
+    }
+    else if (_result is not null && _result.MyEnrollment is not null)
+    {
+        Enrollment mine = _result.MyEnrollment;
+
+        <section class="finder-summary">
+            <div class="summary-item">
+                <span class="summary-label">Your lab</span>
+                <strong>@mine.LabSlot.Display</strong>
+                <span class="muted small">@mine.LabSlot.Room · @mine.LabSlot.Tutor</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Available in your lab</span>
+                <strong>@_result.AvailableInMyLab students</strong>
+                <span class="muted small">@_result.TotalEnrolled enrolled in @(_result.Subject?.Code) overall</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Your team</span>
+                @if (_result.MyTeam is not null)
+                {
+                    <a href="@($"teams/{_result.MyTeam.Id}")"><strong>@_result.MyTeam.Name</strong></a>
+                    <span class="muted small">@_result.MyTeam.Members.Count/@_result.MyTeam.MaxMembers members · @_result.MyTeam.SpotsLeft spot(s) left</span>
+                }
+                else
+                {
+                    <strong>Not in a team yet</strong>
+                    <button class="link-btn small" @onclick="() => _showCreateTeam = true">Create an empty team</button>
+                }
+            </div>
+        </section>
+
+        <section class="filter-bar card">
+            <label class="switch">
+                <input type="checkbox" @bind="_filter.SameLabOnly" @bind:after="LoadResultAsync" />
+                <span class="switch-track"></span>
+                <span>Same lab only</span>
+            </label>
+            <label class="switch">
+                <input type="checkbox" @bind="_filter.OnlyAvailable" @bind:after="LoadResultAsync" />
+                <span class="switch-track"></span>
+                <span>Only students without a team</span>
+            </label>
+            <div class="field inline">
+                <label class="label" for="role">Role</label>
+                <select id="role" class="select" @bind="RoleFilter" @bind:after="LoadResultAsync">
+                    <option value="">Any role</option>
+                    @foreach (TeamRole role in Enum.GetValues<TeamRole>())
+                    {
+                        <option value="@role">@role.ToDisplayName()</option>
+                    }
+                </select>
+            </div>
+            <div class="field inline grow">
+                <label class="label" for="search">Search</label>
+                <input id="search" class="input" type="search" placeholder="Name, interest or pitch…" @bind="_search" @bind:event="oninput" />
+            </div>
+            <div class="field inline">
+                <label class="label" for="minscore">Min. match <strong>@($"{_minimumScore}%")</strong></label>
+                <input id="minscore" class="range" type="range" min="0" max="90" step="5" @bind="_minimumScore" @bind:event="oninput" />
+            </div>
+        </section>
+
+        <div class="tabs" role="tablist">
+            <button class="@TabClass(FinderTab.Suggestions)" @onclick="() => _tab = FinderTab.Suggestions">
+                ✨ Suggested teams <span class="pill">@_result.Suggestions.Count</span>
+            </button>
+            <button class="@TabClass(FinderTab.Candidates)" @onclick="() => _tab = FinderTab.Candidates">
+                👤 Students <span class="pill">@VisibleCandidates.Count</span>
+            </button>
+            <button class="@TabClass(FinderTab.OpenTeams)" @onclick="() => _tab = FinderTab.OpenTeams">
+                🙋 Teams to join <span class="pill">@_result.OpenTeams.Count</span>
+            </button>
+        </div>
+
+        switch (_tab)
+        {
+            case FinderTab.Suggestions:
+                if (_result.MyTeam is not null)
+                {
+                    <EmptyState Icon="✅" Title="You're already in a team" Message="Use the Students tab to invite people to fill your remaining spots.">
+                        <a class="btn btn-primary btn-sm" href="@($"teams/{_result.MyTeam.Id}")">Open my team</a>
+                    </EmptyState>
+                }
+                else if (_result.Suggestions.Count == 0)
+                {
+                    <EmptyState Icon="🤔" Title="Not enough available students yet" Message="There aren't enough available students in your lab to build a full team. Check the Open teams tab or invite friends to join StudyConnect." />
+                }
+                else
+                {
+                    if (_result.Subject is not null && _result.Subject.MinTeamSize < Team.MaximumAllowedMembers)
+                    {
+                        <div class="segmented compact mb">
+                            <span class="small muted">Team size:</span>
+                            @for (int size = _result.Subject.MinTeamSize; size <= Team.MaximumAllowedMembers; size++)
+                            {
+                                int teamSize = size;
+                                <button class="@(_filter.TeamSize == teamSize ? "segment-btn active" : "segment-btn")" @onclick="() => ChangeTeamSizeAsync(teamSize)">@teamSize</button>
+                            }
+                        </div>
+                    }
+
+                    <div class="suggestion-grid">
+                        @foreach (TeamSuggestion suggestion in _result.Suggestions)
+                        {
+                            <article class="card suggestion-card">
+                                <div class="card-header">
+                                    <div>
+                                        <span class="eyebrow">Team score</span>
+                                        <h3>@QualityLabel(suggestion.Score) fit</h3>
+                                    </div>
+                                    <ScoreRing Score="suggestion.Score" Quality="QualityOf(suggestion.Score)" />
+                                </div>
+
+                                <ul class="member-list">
+                                    @foreach (StudentProfile member in suggestion.Members)
+                                    {
+                                        <li>
+                                            <Avatar Name="@member.Name" Size="sm" Online="Realtime.IsOnline(member.UserId)" />
+                                            <div>
+                                                <strong>@(member.UserId == UserId ? "You" : member.Name)</strong>
+                                                <span class="muted small block">@member.PreferredRole.ToDisplayName() · @member.Goal.ToDisplayName()</span>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+
+                                <p class="small"><strong>Avg. pair compatibility:</strong> @($"{suggestion.AveragePairScore:0}%")</p>
+                                <p class="small"><strong>Roles covered:</strong> @(string.Join(", ", suggestion.RolesCovered.Select(r => r.ToDisplayName())))</p>
+                                <div class="chip-list">
+                                    @if (suggestion.CommonSlots.Count == 0)
+                                    {
+                                        <span class="chip static warn">No common free time</span>
+                                    }
+                                    @foreach (AvailabilitySlot slot in suggestion.CommonSlots.Take(5))
+                                    {
+                                        <span class="chip static">🕒 @slot</span>
+                                    }
+                                </div>
+
+                                <div class="card-actions">
+                                    <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="() => FormTeamAsync(suggestion)">Create team &amp; invite</button>
+                                </div>
+                            </article>
+                        }
+                    </div>
+                    <p class="muted small mt">
+                        How it works: the most compatible students in your lab are combined into every possible team, and each team is scored on
+                        average pair compatibility (70%), role coverage (15%) and shared free time (15%).
+                    </p>
+                }
+                break;
+
+            case FinderTab.Candidates:
+                if (VisibleCandidates.Count == 0)
+                {
+                    <EmptyState Icon="🔎" Title="No students match these filters" Message="Try lowering the minimum match, clearing the search or including students from other labs." />
+                }
+                else
+                {
+                    <div class="card-grid">
+                        @foreach (CandidateMatch candidate in VisibleCandidates)
+                        {
+                            <StudentCard Profile="candidate.Profile" Match="candidate.Match" ShowEnrollment="true" ShowBreakdown="true" Online="Realtime.IsOnline(candidate.Profile.UserId)">
+                                <Actions>
+                                    <ConnectButton OtherUserId="candidate.Profile.UserId" Status="candidate.PeerStatus" OnChanged="LoadResultAsync" />
+                                    @if (candidate.InTeam)
+                                    {
+                                        <span class="badge">In a team</span>
+                                    }
+                                    else if (_result.MyTeam is not null && !_result.MyTeam.IsFull)
+                                    {
+                                        if (candidate.HasPendingInvite)
+                                        {
+                                            <span class="badge badge-info">Invited</span>
+                                        }
+                                        else if (candidate.Profile.LabSlotId == mine.LabSlotId)
+                                        {
+                                            <button class="btn btn-secondary btn-sm" disabled="@IsBusy" @onclick="() => InviteAsync(candidate.Profile)">✉ Invite to team</button>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge" title="Assignment groups must be from the same lab">Other lab</span>
+                                        }
+                                    }
+                                </Actions>
+                            </StudentCard>
+                        }
+                    </div>
+                }
+                break;
+
+            default:
+                if (_result.OpenTeams.Count == 0)
+                {
+                    <EmptyState Icon="👥" Title="No teams recruiting in your tutorial" Message="Teams accepting requests in this subject and tutorial will appear here." />
+                }
+                else
+                {
+                    <div class="card-grid">
+                        @foreach (Team team in _result.OpenTeams)
+                        {
+                            <article class="card">
+                                <div class="card-header">
+                                    <div>
+                                        <h3>@team.Name</h3>
+                                        <span class="muted small">@team.LabSlot.Display</span>
+                                    </div>
+                                    <span class="badge badge-success">@team.SpotsLeft spot(s) left</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(team.ProjectIdea))
+                                {
+                                    <p class="pitch">💡 @team.ProjectIdea</p>
+                                }
+                                <div class="avatar-stack">
+                                    @foreach (TeamMember member in team.Members)
+                                    {
+                                        <Avatar Name="@member.User.Name" Size="sm" />
+                                    }
+                                    <span class="small muted">@(string.Join(", ", team.Members.Select(m => m.User.FirstName)))</span>
+                                </div>
+                                <div class="card-actions">
+                                    @if (_result.MyTeam is null)
+                                    {
+                                        <button class="btn btn-primary btn-sm" disabled="@IsBusy" @onclick="() => RequestToJoinAsync(team)">🙋 Request to join</button>
+                                    }
+                                    else
+                                    {
+                                        <span class="muted small">You're already in a team</span>
+                                    }
+                                </div>
+                            </article>
+                        }
+                    </div>
+                }
+                break;
+        }
+    }
+    else
+    {
+        <EmptyState Icon="🎓" Title="You're not enrolled in this subject" Message="Choose a lab for this subject to see students you can team up with.">
+            <a class="btn btn-primary" href="subjects">Go to my subjects</a>
+        </EmptyState>
+    }
+</div>
+
+<Modal IsOpen="_showCreateTeam" Title="Create a team" OnClose="() => _showCreateTeam = false">
+    <ChildContent>
+        <EditForm id="create-team-form" Model="_teamForm" OnValidSubmit="CreateEmptyTeamAsync" class="form">
+            <DataAnnotationsValidator />
+            <div class="field">
+                <label class="label" for="teamname">Team name</label>
+                <InputText id="teamname" class="input" placeholder="e.g. LINQ Legends" @bind-Value="_teamForm.Name" />
+                <ValidationMessage For="() => _teamForm.Name" />
+            </div>
+            <div class="field">
+                <label class="label" for="idea">Project idea <span class="muted small">(optional)</span></label>
+                <InputTextArea id="idea" class="textarea" rows="3" @bind-Value="_teamForm.ProjectIdea" />
+            </div>
+            <div class="field">
+                <label class="label" for="size">Team size</label>
+                <InputNumber id="size" class="input" min="@(_result?.Subject?.MinTeamSize ?? 2)" max="@Team.MaximumAllowedMembers" @bind-Value="_teamForm.MaxMembers" />
+                <span class="field-hint">Choose between @(_result?.Subject?.MinTeamSize ?? 2) and @Team.MaximumAllowedMembers members.</span>
+            </div>
+        </EditForm>
+    </ChildContent>
+    <Footer>
+        <button class="btn btn-ghost" @onclick="() => _showCreateTeam = false">Cancel</button>
+        <button type="submit" form="create-team-form" class="btn btn-primary" disabled="@IsBusy">Create team</button>
+    </Footer>
+</Modal>
+
+@code {
+    private enum FinderTab
+    {
+        Suggestions,
+        Candidates,
+        OpenTeams
+    }
+
+    /// <summary>Optional ?subject=ID query parameter (links from the dashboard / subjects page).</summary>
+    [SupplyParameterFromQuery(Name = "subject")]
+    public int? SubjectQuery { get; set; }
+
+    private bool _loading = true;
+    private FinderTab _tab = FinderTab.OpenTeams;
+    private IReadOnlyList<Enrollment> _enrollments = Array.Empty<Enrollment>();
+    private TeamFinderResult? _result;
+    private readonly TeamFinderFilter _filter = new();
+    private string _search = "";
+    private int _minimumScore;
+    private bool _showCreateTeam;
+    private TeamFormModel _teamForm = new();
+    private string _myFirstName = "My";
+
+    private int SelectedSubjectId { get; set; }
+
+    /// <summary>The role drop-down binds to a string ("" = any role) and converts it to the nullable enum filter.</summary>
+    private string RoleFilter
+    {
+        get => _filter.Role?.ToString() ?? "";
+        set => _filter.Role = Enum.TryParse(value, out TeamRole role) ? role : null;
+    }
+
+    /// <summary>Client-side filtering (search text + minimum score) with LINQ - no database round trip.</summary>
+    private List<CandidateMatch> VisibleCandidates =>
+        (_result?.Candidates ?? Array.Empty<CandidateMatch>())
+            .Where(c => c.Match.Score >= _minimumScore)
+            .Where(c => string.IsNullOrWhiteSpace(_search)
+                        || c.Profile.Name.ContainsIgnoreCase(_search)
+                        || c.Profile.Interests.Any(i => i.ContainsIgnoreCase(_search))
+                        || c.Profile.Pitch.ContainsIgnoreCase(_search))
+            .ToList();
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!await EnsureUserAsync())
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(async () =>
+        {
+            _enrollments = await SubjectService.GetEnrollmentsAsync(UserId);
+            User? me = await ProfileService.GetUserAsync(UserId);
+            _myFirstName = me?.FirstName ?? "My";
+
+            if (_enrollments.Count > 0)
+            {
+                SelectedSubjectId = SubjectQuery is int requested && _enrollments.Any(e => e.SubjectId == requested)
+                    ? requested
+                    : _enrollments[0].SubjectId;
+
+                await LoadResultAsync();
+            }
+        });
+
+        _loading = false;
+
+        SubscribeToRealtime(async realtimeEvent =>
+        {
+            if (realtimeEvent.Type is RealtimeEventType.TeamChanged or RealtimeEventType.ConnectionChanged)
+            {
+                await LoadResultAsync();
+            }
+        });
+    }
+
+    private async Task LoadResultAsync()
+    {
+        if (SelectedSubjectId == 0)
+        {
+            return;
+        }
+
+        await LoadSafelyAsync(async () =>
+        {
+            _result = await Matchmaking.FindTeammatesAsync(UserId, SelectedSubjectId, _filter);
+            if (_result.Subject is not null)
+            {
+                _filter.TeamSize = Math.Clamp(_filter.TeamSize, _result.Subject.MinTeamSize, Team.MaximumAllowedMembers);
+                _teamForm.MaxMembers = _filter.TeamSize;
+            }
+        });
+    }
+
+    private string TabClass(FinderTab tab) => _tab == tab ? "tab active" : "tab";
+
+    private async Task ChangeTeamSizeAsync(int size)
+    {
+        _filter.TeamSize = size;
+        await LoadResultAsync();
+    }
+
+    private static MatchQuality QualityOf(double score) => score switch
+    {
+        >= 75 => MatchQuality.Excellent,
+        >= 55 => MatchQuality.Good,
+        >= 35 => MatchQuality.Fair,
+        _ => MatchQuality.Low
+    };
+
+    private static string QualityLabel(double score) => QualityOf(score).ToString();
+
+    /// <summary>Creates a team from a suggestion and invites the suggested members in one click.</summary>
+    private async Task FormTeamAsync(TeamSuggestion suggestion)
+    {
+        if (_result?.Subject is null)
+        {
+            return;
+        }
+
+        var request = new TeamCreateRequest(_result.Subject.Id, $"{_myFirstName}'s team", null, Math.Max(suggestion.Members.Count, _result.Subject.MinTeamSize));
+        Team? team = await RunAsync(() => TeamService.CreateTeamAsync(UserId, request));
+        if (team is null)
+        {
+            return;
+        }
+
+        int invited = 0;
+        foreach (StudentProfile member in suggestion.OtherMembers(UserId))
+        {
+            OperationResult result = await TeamService.InviteAsync(UserId, team.Id, member.UserId, "Team Finder suggested we'd make a great team!");
+            if (result.Succeeded)
+            {
+                invited++;
+            }
+        }
+
+        Toasts.Success($"Team created and {invited} invitation(s) sent. Rename it any time.");
+        Navigation.NavigateTo($"teams/{team.Id}");
+    }
+
+    private async Task CreateEmptyTeamAsync()
+    {
+        if (_result?.Subject is null)
+        {
+            return;
+        }
+
+        var request = new TeamCreateRequest(_result.Subject.Id, _teamForm.Name, _teamForm.ProjectIdea, _teamForm.MaxMembers);
+        Team? team = await RunAsync(() => TeamService.CreateTeamAsync(UserId, request), "Team created");
+        if (team is not null)
+        {
+            _showCreateTeam = false;
+            Navigation.NavigateTo($"teams/{team.Id}");
+        }
+    }
+
+    private async Task InviteAsync(StudentProfile profile)
+    {
+        if (_result?.MyTeam is null)
+        {
+            return;
+        }
+
+        int teamId = _result.MyTeam.Id;
+        if (await RunAsync(() => TeamService.InviteAsync(UserId, teamId, profile.UserId, null), $"Invitation sent to {profile.Name}"))
+        {
+            await LoadResultAsync();
+        }
+    }
+
+    private async Task RequestToJoinAsync(Team team)
+    {
+        if (await RunAsync(() => TeamService.RequestToJoinAsync(UserId, team.Id, null), $"Request sent to {team.Name}"))
+        {
+            await LoadResultAsync();
+        }
+    }
+}
