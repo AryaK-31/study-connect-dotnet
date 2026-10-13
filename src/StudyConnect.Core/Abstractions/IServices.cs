@@ -156,6 +156,14 @@ public interface INotificationService
     Task MarkAllReadAsync(int userId, CancellationToken cancellationToken = default);
 }
 
+   
+    /// <summary>
+    /// Removes a single notification once the student has opened it, so handled items do not pile up in the bell.
+    /// Returns false when the notification does not exist or belongs to another user.
+    /// </summary>
+    Task<bool> DismissAsync(int userId, int notificationId, CancellationToken cancellationToken = default);
+
+
 /// <summary>Analytics and machine-learning powered insights.</summary>
 public interface IInsightsService
 {
