@@ -49,11 +49,6 @@ StudyConnect.sln
 
 The layers depend inwards only (Web → Infrastructure → Core). The UI talks to **interfaces** and receives implementations through dependency injection, which keeps coupling low.
 
----
-
-## Screenshots
-
-Real screenshots of the running application are in [`docs/screenshots`](docs/screenshots) (dashboard, Team Finder, team workspace with live chat, messages with context menu, insights with K-Means communities, profile setup, mobile and dark mode). They are handy for the project report.
 
 ## Tests
 
