@@ -20,7 +20,6 @@ public static class DatabaseInitializer
 
         await using StudyConnectDbContext db = await factory.CreateDbContextAsync(cancellationToken);
 
-        // Set "Database:ResetOnStartup" to true in appsettings.json to rebuild the demo database.
         if (configuration.GetValue<bool>("Database:ResetOnStartup"))
         {
             logger.LogWarning("Database:ResetOnStartup is enabled - deleting the existing database.");

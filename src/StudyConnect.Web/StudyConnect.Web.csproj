@@ -2,7 +2,6 @@
 
   <!--
     Presentation layer: ASP.NET Core Blazor Web App (interactive server rendering).
-    Run this project (it is the solution's start-up project).
   -->
   <PropertyGroup>
     <RootNamespace>StudyConnect.Web</RootNamespace>
