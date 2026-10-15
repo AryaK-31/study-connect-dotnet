@@ -57,17 +57,14 @@ public sealed class NotificationService : INotificationService
             .Where(n => n.UserId == userId && !n.IsRead)
             .ExecuteUpdateAsync(setters => setters.SetProperty(n => n.IsRead, true), cancellationToken);
     }
+    public async Task<bool> DismissAsync(int userId, int notificationId, CancellationToken cancellationToken = default)
+    {
+        await using StudyConnectDbContext db = await _dbFactory.CreateDbContextAsync(cancellationToken);
 
-       
-       public async Task<bool> DismissAsync(int userId, int notificationId, CancellationToken cancellationToken = default)
-       {
-           await using StudyConnectDbContext db = await _dbFactory.CreateDbContextAsync(cancellationToken);
-   
-           // Filtering on UserId as well as Id means a student can only ever delete their own notifications.
-           int deleted = await db.Notifications
-               .Where(n => n.Id == notificationId && n.UserId == userId)
-               .ExecuteDeleteAsync(cancellationToken);
-   
-           return deleted > 0;
-       }
+        int deleted = await db.Notifications
+            .Where(n => n.Id == notificationId && n.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        return deleted > 0;
+    }
 }

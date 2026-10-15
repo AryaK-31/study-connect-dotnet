@@ -12,8 +12,7 @@ using StudyConnect.Infrastructure.Data;
 namespace StudyConnect.Infrastructure.Services;
 
 /// <summary>
-/// Registration, login and password reset (port of the signup/login/forgotPassword/resetPassword
-/// GraphQL resolvers). Cookie sign-in itself happens in the web layer.
+/// Registration, login and password reset. Cookie sign-in is handled in the web layer.
 /// </summary>
 public sealed class AuthService : IAuthService
 {

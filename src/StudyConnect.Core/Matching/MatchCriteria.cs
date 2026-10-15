@@ -25,8 +25,7 @@ public interface IMatchCriterion
 
 /// <summary>
 /// Base class for all criteria. Each concrete criterion overrides <see cref="Evaluate"/>
-/// (and optionally <see cref="Explain"/>) - this is the main example of polymorphism through
-/// inheritance and method overriding in the project.
+/// and can provide a custom <see cref="Explain"/> implementation.
 /// </summary>
 public abstract class MatchCriterion : IMatchCriterion
 {

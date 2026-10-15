@@ -4,8 +4,7 @@ namespace StudyConnect.Core.Common;
 
 /// <summary>
 /// Builds a stable conversation identifier for two users. The smaller id always comes
-/// first, so both participants share the same key (ported from the original Node.js
-/// <c>makeConversationId</c> helper).
+/// first, so both participants share the same key.
 /// </summary>
 public static class ConversationKey
 {

@@ -2,7 +2,7 @@ using StudyConnect.Core.Validation;
 
 namespace StudyConnect.Infrastructure.Services;
 
-/// <summary>Profile management (port of the updateProfile / deleteProfile resolvers).</summary>
+/// <summary>Profile management.</summary>
 public sealed class ProfileService : IProfileService
 {
     private readonly IDbContextFactory<StudyConnectDbContext> _dbFactory;

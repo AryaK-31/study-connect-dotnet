@@ -130,7 +130,6 @@ public sealed class MatchmakingService : IMatchmakingService
 
         IReadOnlyDictionary<int, PeerStatus> peers = await _connections.GetPeerStatusesAsync(userId, cancellationToken);
 
-        // ----- Filter candidates with LINQ + lambda expressions -----
         IEnumerable<Enrollment> candidates = enrollments.Where(e => e.UserId != userId);
 
         if (filter.SameLabOnly)

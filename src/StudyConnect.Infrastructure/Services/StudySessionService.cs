@@ -1,6 +1,6 @@
 namespace StudyConnect.Infrastructure.Services;
 
-/// <summary>Study sessions (port of sessions / createSession / joinSession / leaveSession / deleteSession).</summary>
+/// <summary>Study session management.</summary>
 public sealed class StudySessionService : IStudySessionService
 {
     public const int MinCapacity = 2;

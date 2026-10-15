@@ -1,5 +1,3 @@
-# Builds the solution and runs the NUnit tests on every push.
-# Push this folder to a GitHub repository and open the "Actions" tab to see the result.
 name: build-and-test
 
 on:

@@ -12,7 +12,7 @@ public static class InputValidators
     private static readonly Regex EmailRegex = new(@"^[^\s@]+@[^\s@]+\.[^\s@]+$", RegexOptions.Compiled);
     private static readonly Regex PhoneRegex = new(@"^\+?[0-9 ()\-]{8,20}$", RegexOptions.Compiled);
 
-    /// <summary>Same e-mail rule as the original Node.js backend.</summary>
+    /// <summary>Checks whether an e-mail address has a valid format.</summary>
     public static bool IsValidEmail(string? email) =>
         !string.IsNullOrWhiteSpace(email) && email.Length <= 200 && EmailRegex.IsMatch(email.Trim());
 

@@ -35,9 +35,7 @@ public sealed class EmailOptions
 }
 
 /// <summary>
-/// Template-method base class for e-mail senders: validation and logging live here once,
-/// while each subclass overrides <see cref="DeliverAsync"/> with its own delivery mechanism
-/// (polymorphism through inheritance and overriding).
+/// Shared validation and logging for e-mail senders.
 /// </summary>
 public abstract class EmailSenderBase : IEmailSender
 {
@@ -104,7 +102,7 @@ public sealed class SmtpEmailSender : EmailSenderBase
 
 /// <summary>
 /// Development e-mail sender: writes each e-mail as an HTML file into the outbox folder
-/// (file writing) so the app works in the lab without any mail server.
+/// when SMTP is not configured.
 /// </summary>
 public sealed class FileOutboxEmailSender : EmailSenderBase
 {

@@ -1,19 +1,16 @@
-# StudyConnect (.NET 9 edition)
+# StudyConnect
 
-StudyConnect helps university students find study partners and **assignment team mates from the same subject and the same lab**.
-
-> **The problem:** in a subject like *31927 Applications Development with .NET*, the group assignment needs 2–3 students who must all attend the same lab. Today each student messages classmates one by one to find a group.
-> **The solution:** students enrol with their lab, role, goal and free time; StudyConnect ranks every available student in that lab with an explainable compatibility score and proposes complete teams in one click.
+StudyConnect is a .NET 9 web app for students looking for study partners and assignment teammates. It matches students enrolled in the same subject and lab using their interests, availability, goals, and preferred roles.
 
 ---
 
 ## Quick start
 
-1. Open `StudyConnect.sln` in **Visual Studio 2022 (17.12+)**.
-2. Set **StudyConnect.Web** as the start-up project and press **F5**.
-3. Log in with **`alice@uts.edu.au` / `Demo@1234`** (30 demo students are seeded automatically).
+1. Open `StudyConnect.sln` in Visual Studio 2022 (17.12 or later).
+2. Set `StudyConnect.Web` as the startup project and run it.
+3. Sign in with `alice@uts.edu.au` and password `Demo@1234`. The app seeds 30 demo students on first run.
 
-No database server is needed; a SQLite file is created in `src/StudyConnect.Web/App_Data/` on first run. See `ReadMe.txt` for detailed steps and a demo script.
+The app creates a local SQLite database in `src/StudyConnect.Web/App_Data/`. See `ReadMe.txt` for command-line instructions and demo accounts.
 
 ---
 
@@ -26,7 +23,7 @@ StudyConnect.sln
 │   │   ├── Entities/                EF Core entity classes (User, Subject, LabSlot, Team, ...)
 │   │   ├── Enums/                   TimeBlock, TeamRole, SkillLevel, TargetGrade, ...
 │   │   ├── Abstractions/            Service interfaces (IAuthService, ITeamService, IRealtimeNotifier, ...)
-│   │   ├── Matching/                Compatibility engine, match criteria (polymorphism), team builder
+│   │   ├── Matching/                Compatibility engine, match criteria, team builder
 │   │   ├── MachineLearning/         K-Means clustering, TF-IDF vectoriser, study-community analyser
 │   │   ├── Common/                  Result<T>, Combinatorics iterator, WeeklyAvailability enumerator
 │   │   ├── Extensions/              String / enum / date / sequence extension methods
@@ -47,16 +44,13 @@ StudyConnect.sln
     └── StudyConnect.Tests           NUnit tests (unit + SQLite in-memory integration tests)
 ```
 
-The layers depend inwards only (Web → Infrastructure → Core). The UI talks to **interfaces** and receives implementations through dependency injection, which keeps coupling low.
-
-
 ## Tests
 
 ```
 dotnet test
 ```
 
-The tests cover the password policy and hasher, extension methods, the combinatorics iterator, the compatibility engine and team builder, K-Means / TF-IDF, and integration flows (register → login → reset password, connect → message, team invitations with lab/size rules, leader hand-over, Team Finder lab filtering, JSON seeding from disk).
+Tests cover password handling, matching and team building, K-Means and TF-IDF, and service flows for accounts, connections, messaging, teams, and data seeding.
 
 
 ## Configuration

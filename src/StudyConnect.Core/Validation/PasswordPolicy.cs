@@ -1,6 +1,6 @@
 namespace StudyConnect.Core.Validation;
 
-/// <summary>Rules a password must satisfy (ported from the original passwordValidator.js).</summary>
+/// <summary>Rules a password must satisfy.</summary>
 public sealed record PasswordRequirements(
     int MinLength,
     bool RequireUppercase,
@@ -35,10 +35,7 @@ public interface IPasswordPolicy
     PasswordValidationResult Validate(string? password);
 }
 
-/// <summary>
-/// Default password policy. Each rule is stored as a (enabled, predicate, message) tuple so rules
-/// are evaluated with LINQ and lambda expressions instead of a long chain of if-statements.
-/// </summary>
+/// <summary>Default password policy.</summary>
 public sealed class PasswordPolicy : IPasswordPolicy
 {
     public const string SpecialCharacters = "!@#$%^&*()_+-=[]{};':\"\\|,.<>/?~`";
@@ -51,7 +48,7 @@ public sealed class PasswordPolicy : IPasswordPolicy
     {
     }
 
-    /// <summary>Creates a policy with custom requirements (constructor overloading).</summary>
+    /// <summary>Creates a policy with custom requirements.</summary>
     public PasswordPolicy(PasswordRequirements requirements)
     {
         Requirements = requirements ?? throw new ArgumentNullException(nameof(requirements));
