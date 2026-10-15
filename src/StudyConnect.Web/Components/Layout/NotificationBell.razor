@@ -31,7 +31,8 @@
                 <div class="notification-list">
                     @foreach (Notification item in _items)
                     {
-                        <a class="@NotificationClass(item)" href="@(item.Link ?? "/")" @onclick="Close">
+                            <a class="@NotificationClass(item)" href="@(item.Link ?? "/")" 
+                                @onclick="() => OpenAsync(item)" @onclick:preventDefault="true">
                             <span class="notification-icon">@IconFor(item.Type)</span>
                             <span class="notification-text">
                                 <strong>@item.Title</strong>
@@ -90,6 +91,23 @@
     }
 
     private void Close() => _open = false;
+    
+    /// <summary>
+    /// Opening a notification means the student is dealing with it, so it is removed from the list
+    /// (and the badge count drops) before we navigate to the page it points to.
+    /// </summary>
+    private async Task OpenAsync(Notification item)
+    {
+        _open = false;
+
+        await LoadSafelyAsync(async () =>
+        {
+            await NotificationService.DismissAsync(UserId, item.Id);
+            await LoadAsync();
+        });
+
+        Navigation.NavigateTo(item.Link ?? "/");
+    }
 
     private async Task MarkAllReadAsync()
     {

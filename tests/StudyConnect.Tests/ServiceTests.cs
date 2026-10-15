@@ -194,6 +194,41 @@ public class ConnectionAndMessageServiceTests
 }
 
 [TestFixture]
+public class NotificationServiceTests
+{
+    private ServiceHarness _harness = null!;
+
+    [SetUp]
+    public void SetUp() => _harness = new ServiceHarness();
+
+    [TearDown]
+    public void TearDown() => _harness.Dispose();
+
+    [Test]
+    public async Task Dismiss_RemovesOnlyThatNotification_AndOnlyForItsOwner()
+    {
+        int alice = _harness.CreateStudent("Alice");
+        int bob = _harness.CreateStudent("Bob");
+        await _harness.Notifications.NotifyAsync(alice, NotificationType.TeamUpdate, "First", "body", "/teams");
+        await _harness.Notifications.NotifyAsync(alice, NotificationType.TeamUpdate, "Second", "body", "/teams");
+
+        IReadOnlyList<Notification> before = await _harness.Notifications.GetRecentAsync(alice);
+        int firstId = before.Single(n => n.Title == "First").Id;
+
+        bool dismissedByStranger = await _harness.Notifications.DismissAsync(bob, firstId);
+        bool dismissedByOwner = await _harness.Notifications.DismissAsync(alice, firstId);
+        IReadOnlyList<Notification> after = await _harness.Notifications.GetRecentAsync(alice);
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(dismissedByStranger, Is.False, "another student must not be able to delete Alice's notification");
+            Assert.That(dismissedByOwner, Is.True);
+            Assert.That(after.Select(n => n.Title), Is.EqualTo(new[] { "Second" }));
+        });
+        Assert.That(await _harness.Notifications.GetUnreadCountAsync(alice), Is.EqualTo(1));
+    }
+}
+[TestFixture]
 public class TeamServiceTests
 {
     private ServiceHarness _harness = null!;
